@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
@@ -7,14 +9,22 @@ import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
-// ✅ FIXED CORS (IMPORTANT 🔥)
+// ✅ FIX __dirname FIRST (VERY IMPORTANT)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ✅ MIDDLEWARE
+app.use(express.json());
+
+// ✅ CORS (ALLOW ALL)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use(express.json());
+// ✅ SERVE ADMIN PANEL (AFTER __dirname)
+app.use("/admin", express.static(path.join(__dirname, "public/admin")));
 
 // ✅ CONNECT DATABASE
 connectDB();
@@ -28,6 +38,7 @@ app.get("/", (req, res) => {
   res.send("SuperXbet Backend Running 🚀");
 });
 
+// ✅ START SERVER
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {

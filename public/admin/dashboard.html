@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+
+  <style>
+    body {
+      background: #0f172a;
+      color: white;
+      font-family: Arial;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #020617;
+      padding: 15px 20px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .header h2 {
+      margin: 0;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .card {
+      background: #020617;
+      border: 1px solid #1e293b;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- 🔐 LOGIN PROTECTION -->
+<script>
+  const token = localStorage.getItem("token");
+
+  if (!token || token === "undefined" || token === null) {
+    alert("Please login first");
+    window.location.href = "admin-login.html";
+  }
+</script>
+
+<!-- HEADER -->
+<div class="header">
+  <h2>🔥 SuperXbet Admin</h2>
+  <button class="btn btn-danger" onclick="logout()">Logout</button>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+  <button class="btn btn-primary" onclick="loadDeposits()">Load Deposits</button>
+  <button class="btn btn-primary" onclick="loadWithdraws()">Load Withdraws</button>
+
+  <div id="data"></div>
+
+</div>
+
+<!-- LOGOUT SCRIPT -->
+<script>
+  function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "admin-login.html";
+  }
+</script>
+
+<script src="script.js"></script>
+
+</body>
+</html>
