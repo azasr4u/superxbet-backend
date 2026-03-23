@@ -1,6 +1,6 @@
-const API = "https://superxbet-backend.onrender.com/api/admin";
+const API = "/api/admin";
 
-// LOGIN
+// ================= LOGIN =================
 async function login() {
   try {
     const username = document.getElementById("username").value;
@@ -8,23 +8,13 @@ async function login() {
 
     const res = await fetch(API + "/login", {
       method: "POST",
-      mode: "cors",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ username, password })
     });
 
-    const text = await res.text();
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      alert("❌ Blocked by Hostinger (403)");
-      console.log(text);
-      return;
-    }
+    const data = await res.json();
 
     if (res.status === 200) {
       localStorage.setItem("token", data.token);
@@ -35,26 +25,43 @@ async function login() {
     }
 
   } catch (err) {
-    alert("Network error");
+    alert("Server error");
     console.log(err);
   }
 }
 
-// LOAD DEPOSITS
+
+// ================= LOAD DEPOSITS =================
 async function loadDeposits() {
-  const res = await fetch(API + "/deposits");
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(API + "/deposits", {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
   const data = await res.json();
   render(data, "deposit");
 }
 
-// LOAD WITHDRAWS
+
+// ================= LOAD WITHDRAWS =================
 async function loadWithdraws() {
-  const res = await fetch(API + "/withdraws");
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(API + "/withdraws", {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
   const data = await res.json();
   render(data, "withdraw");
 }
 
-// RENDER
+
+// ================= RENDER =================
 function render(list, type) {
   const div = document.getElementById("data");
   div.innerHTML = "";
@@ -80,16 +87,34 @@ function render(list, type) {
   });
 }
 
-// APPROVE
+
+// ================= APPROVE =================
 async function approve(id, type) {
-  await fetch(`${API}/${type}/approve/${id}`, { method: "POST" });
+  const token = localStorage.getItem("token");
+
+  await fetch(`${API}/${type}/approve/${id}`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
   alert("Approved");
   location.reload();
 }
 
-// REJECT
+
+// ================= REJECT =================
 async function reject(id, type) {
-  await fetch(`${API}/${type}/reject/${id}`, { method: "POST" });
+  const token = localStorage.getItem("token");
+
+  await fetch(`${API}/${type}/reject/${id}`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
   alert("Rejected");
   location.reload();
 }
