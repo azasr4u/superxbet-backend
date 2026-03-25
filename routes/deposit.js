@@ -8,15 +8,10 @@ router.post("/", async (req, res) => {
   try {
     const { userId, amount } = req.body;
 
-    if (!userId || !amount) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
-
-    // ❗ DO NOT UPDATE WALLET HERE
     const deposit = new Deposit({
       userId,
       amount,
-      status: "Pending"
+      status: "Pending" // ✅ IMPORTANT
     });
 
     await deposit.save();
@@ -26,17 +21,6 @@ router.post("/", async (req, res) => {
       deposit
     });
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ================= USER DEPOSIT HISTORY =================
-router.get("/user/:id", async (req, res) => {
-  try {
-    const data = await Deposit.find({ userId: req.params.id });
-    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
