@@ -1,5 +1,6 @@
-// ✅ AUTO API URL (BEST PRACTICE)
+// ✅ API URL (Render backend)
 const API = "https://superxbet-backend.onrender.com/api/admin";
+
 
 // ================= LOGIN =================
 async function login() {
@@ -36,37 +37,62 @@ async function login() {
 }
 
 
-// ================= LOAD DEPOSITS =================
-async function loadDeposits() {
+// ================= AUTH CHECK =================
+function checkAuth() {
   const token = localStorage.getItem("token");
 
-  const res = await fetch(API + "/deposits", {
-    headers: {
-      "Authorization": "Bearer " + token
-    }
-  });
+  if (!token) {
+    alert("Please login first");
+    window.location.href = "admin-login.html";
+  }
 
-  const data = await res.json();
-  render(data, "deposit");
+  return token;
+}
+
+
+// ================= LOAD DEPOSITS =================
+async function loadDeposits() {
+  const token = checkAuth();
+
+  try {
+    const res = await fetch(API + "/deposits", {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    const data = await res.json();
+    render(data, "deposit");
+
+  } catch (err) {
+    console.log(err);
+    alert("Failed to load deposits");
+  }
 }
 
 
 // ================= LOAD WITHDRAWS =================
 async function loadWithdraws() {
-  const token = localStorage.getItem("token");
+  const token = checkAuth();
 
-  const res = await fetch(API + "/withdraws", {
-    headers: {
-      "Authorization": "Bearer " + token
-    }
-  });
+  try {
+    const res = await fetch(API + "/withdraws", {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
 
-  const data = await res.json();
-  render(data, "withdraw");
+    const data = await res.json();
+    render(data, "withdraw");
+
+  } catch (err) {
+    console.log(err);
+    alert("Failed to load withdraws");
+  }
 }
 
 
-// ================= RENDER =================
+// ================= RENDER (ONLY PENDING) =================
 function render(list, type) {
   const div = document.getElementById("data");
   div.innerHTML = "";
@@ -76,17 +102,25 @@ function render(list, type) {
     return;
   }
 
-  list.forEach(item => {
+  // ✅ FILTER ONLY PENDING
+  const filtered = list.filter(item => item.status === "Pending");
+
+  if (!filtered.length) {
+    div.innerHTML = "<p>No pending requests</p>";
+    return;
+  }
+
+  filtered.forEach(item => {
     const user = item.userId?.phone || "Unknown";
 
     div.innerHTML += `
-      <div style="border:1px solid #444; padding:10px; margin:10px;">
+      <div style="border:1px solid #444; padding:12px; margin:10px; border-radius:8px;">
         <b>User:</b> ${user}<br>
         <b>Amount:</b> ₹${item.amount}<br>
         <b>Status:</b> ${item.status}<br><br>
 
-        <button onclick="approve('${item._id}','${type}')">Approve</button>
-        <button onclick="reject('${item._id}','${type}')">Reject</button>
+        <button onclick="approve('${item._id}','${type}')" style="margin-right:10px;">✅ Approve</button>
+        <button onclick="reject('${item._id}','${type}')">❌ Reject</button>
       </div>
     `;
   });
@@ -95,31 +129,56 @@ function render(list, type) {
 
 // ================= APPROVE =================
 async function approve(id, type) {
-  const token = localStorage.getItem("token");
+  const token = checkAuth();
 
-  await fetch(`${API}/${type}/approve/${id}`, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + token
-    }
-  });
+  try {
+    const res = await fetch(`${API}/${type}/approve/${id}`, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
 
-  alert("Approved");
-  location.reload();
+    const data = await res.json();
+
+    alert(data.message || "Approved");
+    location.reload();
+
+  } catch (err) {
+    console.log(err);
+    alert("Approve failed");
+  }
 }
 
 
 // ================= REJECT =================
 async function reject(id, type) {
-  const token = localStorage.getItem("token");
+  const token = checkAuth();
 
-  await fetch(`${API}/${type}/reject/${id}`, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + token
-    }
-  });
+  try {
+    const res = await fetch(`${API}/${type}/reject/${id}`, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
 
-  alert("Rejected");
-  location.reload();
+    const data = await res.json();
+
+    alert(data.message || "Rejected");
+    location.reload();
+
+  } catch (err) {
+    console.log(err);
+    alert("Reject failed");
+  }
+}
+
+
+// ================= LOGOUT =================
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+
+  window.location.href = "admin-login.html";
 }
