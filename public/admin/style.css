@@ -1,0 +1,66 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #050505;
+  color: white;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  height: 100vh;
+  position: fixed;
+  background: #0a0a0a;
+  border-right: 1px solid cyan;
+  box-shadow: 0 0 15px cyan;
+  padding: 20px;
+}
+
+.sidebar h2 {
+  color: cyan;
+  text-align: center;
+}
+
+.sidebar a {
+  display: block;
+  color: white;
+  padding: 10px;
+  margin: 10px 0;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.sidebar a:hover {
+  background: cyan;
+  color: black;
+}
+
+/* MAIN */
+.main {
+  margin-left: 240px;
+  padding: 20px;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid cyan;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px cyan;
+}
+
+/* BUTTON */
+button {
+  background: black;
+  color: cyan;
+  border: 1px solid cyan;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: cyan;
+  color: black;
+}

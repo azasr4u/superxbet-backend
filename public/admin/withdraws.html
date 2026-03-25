@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Withdraws</title>
+
+  <style>
+    body { background:#000; color:white; font-family:Arial; }
+    .card {
+      border:1px solid cyan;
+      padding:15px;
+      margin:10px;
+      box-shadow:0 0 10px cyan;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Withdraw Requests</h2>
+<div id="list"></div>
+
+<script>
+const API = "https://superxbet-backend.onrender.com/api";
+
+async function load(){
+
+  const res = await fetch(API + "/admin/withdraws", {
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("adminToken")
+    }
+  });
+
+  const data = await res.json();
+
+  list.innerHTML = data.map(w => `
+    <div class="card">
+      ₹${w.amount}
+      <br><br>
+      <button onclick="approve('${w._id}')">Approve</button>
+    </div>
+  `).join("");
+}
+
+async function approve(id){
+  await fetch(API + "/admin/withdraw/approve/" + id, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("adminToken")
+    }
+  });
+
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>

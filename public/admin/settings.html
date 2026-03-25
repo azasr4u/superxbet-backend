@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Settings</title>
+
+  <style>
+    body { background:#000; color:white; font-family:Arial; }
+  </style>
+</head>
+
+<body>
+
+<h2>Payment Settings</h2>
+
+<input id="upi" placeholder="UPI ID"><br><br>
+<input id="name" placeholder="Name"><br><br>
+<input type="file" id="qr"><br><br>
+
+<button onclick="save()">Save</button>
+
+<script>
+async function save(){
+
+  const formData = new FormData();
+  formData.append("upiId", upi.value);
+  formData.append("name", name.value);
+  formData.append("qr", qr.files[0]);
+
+  await fetch("https://superxbet-backend.onrender.com/api/admin/payment", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("adminToken")
+    },
+    body: formData
+  });
+
+  alert("Saved");
+}
+</script>
+
+</body>
+</html>

@@ -2,17 +2,85 @@
 <html>
 <head>
   <title>Admin Login</title>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      font-family: Arial;
+      color: white;
+    }
+
+    .box {
+      width: 340px;
+      padding: 30px;
+      border: 1px solid cyan;
+      border-radius: 12px;
+      box-shadow: 0 0 25px cyan;
+    }
+
+    h2 {
+      text-align: center;
+      color: cyan;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background: transparent;
+      border: 1px solid cyan;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid cyan;
+      background: black;
+      color: cyan;
+      cursor: pointer;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Admin / Agent Login</h2>
+<div class="box">
+  <h2>Admin Login</h2>
 
-<input id="username" placeholder="Phone / Email"><br><br>
-<input id="password" placeholder="Password" type="password"><br><br>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
 
-<button onclick="login()">Login</button>
+  <button onclick="login()">Login</button>
+</div>
 
-<script src="script.js"></script>
+<script>
+async function login(){
+
+  const res = await fetch("https://superxbet-backend.onrender.com/api/admin/login", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
+  });
+
+  const data = await res.json();
+
+  if(data.token){
+    localStorage.setItem("adminToken", data.token);
+    window.location.href = "dashboard.html";
+  } else {
+    alert("Login failed");
+  }
+}
+</script>
 
 </body>
 </html>
