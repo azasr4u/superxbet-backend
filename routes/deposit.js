@@ -1,48 +1,45 @@
-import User from "../models/User.js";
+import express from "express";
+import Deposit from "../models/Deposit.js";
 
-export const applyReferralBonus = async (userId) => {
+const router = express.Router();
+
+// ================= CREATE DEPOSIT =================
+router.post("/", async (req, res) => {
   try {
-    // 🔍 Get user who made deposit
-    const user = await User.findById(userId);
+    const { userId, amount } = req.body;
 
-    if (!user) {
-      console.log("User not found");
-      return;
+    if (!userId || !amount) {
+      return res.status(400).json({ error: "Missing fields" });
     }
 
-    // ❌ No referral OR already rewarded
-    if (!user.referredBy || user.referralRewarded) {
-      return;
-    }
-
-    // 🔍 Find referrer
-    const refUser = await User.findOne({
-      referralCode: user.referredBy
+    // ❗ DO NOT UPDATE WALLET HERE
+    const deposit = new Deposit({
+      userId,
+      amount,
+      status: "Pending"
     });
 
-    if (!refUser) {
-      console.log("Referrer not found");
-      return;
-    }
+    await deposit.save();
 
-    // 🎁 BONUS AMOUNT
-    const BONUS = 3000;
-    const WAGER_MULTIPLIER = 35;
-
-    refUser.bonusBalance = (refUser.bonusBalance || 0) + BONUS;
-
-    refUser.wageringRequired =
-      (refUser.wageringRequired || 0) + BONUS * WAGER_MULTIPLIER;
-
-    await refUser.save();
-
-    // ✅ Mark as rewarded (very important to avoid duplicate bonus)
-    user.referralRewarded = true;
-    await user.save();
-
-    console.log("Referral bonus applied");
+    res.json({
+      message: "Deposit request submitted",
+      deposit
+    });
 
   } catch (err) {
-    console.error("Referral bonus error:", err.message);
+    res.status(500).json({ error: err.message });
   }
-};
+});
+
+
+// ================= USER DEPOSIT HISTORY =================
+router.get("/user/:id", async (req, res) => {
+  try {
+    const data = await Deposit.find({ userId: req.params.id });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;

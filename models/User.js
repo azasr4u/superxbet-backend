@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
   wageringRequired: { type: Number, default: 0 },
 
   // 🔥 REFERRAL
-  referralCode: { type: String, unique: true },
+  referralCode: { type: String, unique: true, sparse: true },
   referredBy: { type: String, default: null },
   referralRewarded: { type: Boolean, default: false },
 

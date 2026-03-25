@@ -96,7 +96,9 @@ router.post("/deposit/approve/:id", verifyAdmin, async (req, res) => {
 
   user.walletBalance += deposit.amount;
 
-  await user.save();
+    await user.save();
+
+    await applyReferralBonus(user._id);
 
   res.json({ message: "Deposit approved" });
 });

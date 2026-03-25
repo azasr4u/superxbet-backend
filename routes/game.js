@@ -1,14 +1,12 @@
 import express from "express";
-import { handleWin } from "../services/walletService.js";
 import User from "../models/User.js";
 
 const router = express.Router();
 
-
-// 🎯 PLACE BET (optional future use)
-router.post("/bet", async (req, res) => {
+// 🎮 USER WIN EVENT
+router.post("/win", async (req, res) => {
   try {
-    const { userId, amount } = req.body;
+    const { userId, winAmount } = req.body;
 
     const user = await User.findById(userId);
 
@@ -16,34 +14,29 @@ router.post("/bet", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.walletBalance < amount) {
-      return res.status(400).json({ error: "Insufficient balance" });
+    // 💰 ADD WINNING TO WALLET
+    user.walletBalance += winAmount;
+
+    // 🎯 REDUCE WAGER USING WINNING ONLY
+    if (user.wageringRequired > 0) {
+      user.wageringRequired -= winAmount;
+
+      if (user.wageringRequired < 0) {
+        user.wageringRequired = 0;
+      }
     }
 
-    user.walletBalance -= amount;
     await user.save();
 
-    res.json({ message: "Bet placed" });
+    res.json({
+      message: "Win processed",
+      wallet: user.walletBalance,
+      wagerLeft: user.wageringRequired
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-
-// 🏆 WIN API (🔥 VERY IMPORTANT)
-router.post("/win", async (req, res) => {
-  try {
-    const { userId, winAmount } = req.body;
-
-    await handleWin(userId, winAmount);
-
-    res.json({ message: "Win processed" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-export default router;                  
+export default router;

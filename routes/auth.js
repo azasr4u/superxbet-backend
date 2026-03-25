@@ -81,10 +81,14 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign({ id: user._id }, JWT_SECRET);
 
     res.json({
-      token,
-      user
-    });
-
+  token,
+  user: {
+    id: user._id,
+    fullName: user.fullName,
+    phone: user.phone,
+    wallet: user.walletBalance
+  }
+});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
