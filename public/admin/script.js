@@ -1,8 +1,11 @@
-const API = "/api/admin";
+// ✅ AUTO API URL (BEST PRACTICE)
+const API = "https://superxbet-backend.onrender.com/api/admin";
 
 // ================= LOGIN =================
 async function login() {
   try {
+    console.log("Login clicked");
+
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
@@ -15,18 +18,20 @@ async function login() {
     });
 
     const data = await res.json();
+    console.log("LOGIN RESPONSE:", data);
 
     if (res.status === 200) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
+
       window.location.href = "dashboard.html";
     } else {
       alert(data.error || "Login failed");
     }
 
   } catch (err) {
+    console.log("LOGIN ERROR:", err);
     alert("Server error");
-    console.log(err);
   }
 }
 
@@ -66,7 +71,7 @@ function render(list, type) {
   const div = document.getElementById("data");
   div.innerHTML = "";
 
-  if (!list.length) {
+  if (!list || !list.length) {
     div.innerHTML = "<p>No data</p>";
     return;
   }

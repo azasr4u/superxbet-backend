@@ -8,6 +8,29 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
+const SECRET = "superxbet_secret";
+
+// ================= MIDDLEWARE (AUTH) =================
+const verifyAdmin = (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) return res.status(401).json({ error: "No token" });
+
+    const decoded = jwt.verify(token, SECRET);
+
+    if (decoded.role !== "admin" && decoded.role !== "agent") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    req.user = decoded;
+    next();
+
+  } catch (err) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+
 // ================= LOGIN =================
 router.post("/login", async (req, res) => {
   try {
@@ -21,10 +44,10 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "User not found" });
     }
 
-    // 🔥 TEMP FIX → allow all users (we fix roles later)
-    // if (user.role !== "admin" && user.role !== "agent") {
-    //   return res.status(403).json({ error: "Access denied" });
-    // }
+    // ✅ ONLY ADMIN / AGENT CAN LOGIN
+    if (user.role !== "admin" && user.role !== "agent") {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -33,13 +56,14 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role || "admin" },
-      "superxbet_secret"
+      { id: user._id, role: user.role },
+      SECRET,
+      { expiresIn: "7d" }
     );
 
     res.json({
       token,
-      role: user.role || "admin",
+      role: user.role,
       name: user.fullName
     });
 
@@ -48,14 +72,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
 // ================= GET DEPOSITS =================
-router.get("/deposits", async (req, res) => {
+router.get("/deposits", verifyAdmin, async (req, res) => {
   const deposits = await Deposit.find().populate("userId");
   res.json(deposits);
 });
 
+
 // ================= APPROVE DEPOSIT =================
-router.post("/deposit/approve/:id", async (req, res) => {
+router.post("/deposit/approve/:id", verifyAdmin, async (req, res) => {
+
   const deposit = await Deposit.findById(req.params.id);
 
   if (!deposit) return res.status(404).json({ error: "Deposit not found" });
@@ -73,8 +100,10 @@ router.post("/deposit/approve/:id", async (req, res) => {
   res.json({ message: "Deposit approved" });
 });
 
+
 // ================= REJECT DEPOSIT =================
-router.post("/deposit/reject/:id", async (req, res) => {
+router.post("/deposit/reject/:id", verifyAdmin, async (req, res) => {
+
   const deposit = await Deposit.findById(req.params.id);
 
   if (!deposit) return res.status(404).json({ error: "Not found" });
@@ -85,14 +114,17 @@ router.post("/deposit/reject/:id", async (req, res) => {
   res.json({ message: "Rejected" });
 });
 
+
 // ================= GET WITHDRAWS =================
-router.get("/withdraws", async (req, res) => {
+router.get("/withdraws", verifyAdmin, async (req, res) => {
   const data = await Withdraw.find().populate("userId");
   res.json(data);
 });
 
+
 // ================= APPROVE WITHDRAW =================
-router.post("/withdraw/approve/:id", async (req, res) => {
+router.post("/withdraw/approve/:id", verifyAdmin, async (req, res) => {
+
   const withdraw = await Withdraw.findById(req.params.id);
 
   if (!withdraw) return res.status(404).json({ error: "Not found" });
@@ -120,8 +152,10 @@ router.post("/withdraw/approve/:id", async (req, res) => {
   res.json({ message: "Withdraw approved" });
 });
 
+
 // ================= REJECT WITHDRAW =================
-router.post("/withdraw/reject/:id", async (req, res) => {
+router.post("/withdraw/reject/:id", verifyAdmin, async (req, res) => {
+
   const withdraw = await Withdraw.findById(req.params.id);
 
   if (!withdraw) return res.status(404).json({ error: "Not found" });
