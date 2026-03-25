@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Odds Control</title>
+
+  <style>
+    body { background:#000; color:white; font-family:Arial; }
+
+    .card {
+      border:1px solid cyan;
+      padding:20px;
+      margin:20px;
+      box-shadow:0 0 10px cyan;
+    }
+
+    input {
+      padding:10px;
+      margin:5px;
+      border:1px solid cyan;
+      background:black;
+      color:white;
+    }
+
+    button {
+      border:1px solid cyan;
+      background:black;
+      color:cyan;
+      padding:10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Live Odds Control</h2>
+
+<div class="card">
+
+  <h3>Match</h3>
+  <input id="match" placeholder="TeamA vs TeamB"><br><br>
+
+  <h3>Odds</h3>
+  <input id="teamA" placeholder="Team A Odds">
+  <input id="teamB" placeholder="Team B Odds"><br><br>
+
+  <button onclick="update()">Update Odds</button>
+
+</div>
+
+<script>
+const API = "https://superxbet-backend.onrender.com/api";
+const token = localStorage.getItem("adminToken");
+
+async function update(){
+
+  await fetch(API + "/admin/live-odds", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({
+      match: match.value,
+      odds: {
+        teamA: teamA.value,
+        teamB: teamB.value
+      }
+    })
+  });
+
+  alert("Odds Updated");
+}
+</script>
+
+</body>
+</html>

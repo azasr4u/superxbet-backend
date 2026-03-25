@@ -29,7 +29,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["user", "admin", "agent"],
     default: "user"
-  }
+  },
+
+  // ✅ NEW (ADMIN FEATURES)
+  blocked: { type: Boolean, default: false },
+  kycVerified: { type: Boolean, default: false }
 
 }, { timestamps: true });
 

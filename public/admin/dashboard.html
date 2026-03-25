@@ -1,49 +1,282 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard</title>
+  <title>SuperXbet Admin</title>
 
   <style>
-    body { background:#000; color:white; font-family:Arial; }
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #050505;
+      color: white;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 240px;
+      height: 100vh;
+      position: fixed;
+      background: #0a0a0a;
+      border-right: 1px solid cyan;
+      box-shadow: 0 0 20px cyan;
+      padding: 20px;
+    }
+
+    .sidebar h2 {
+      color: cyan;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 12px;
+      margin: 8px 0;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: 0.3s;
+      font-size: 14px;
+    }
+
+    .sidebar a:hover {
+      background: cyan;
+      color: black;
+    }
+
+    /* MAIN */
+    .main {
+      margin-left: 260px;
+      padding: 20px;
+    }
+
+    h2 {
+      color: cyan;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
     .card {
-      border:1px solid cyan;
-      padding:20px;
-      margin:20px;
-      box-shadow:0 0 10px cyan;
+      border: 1px solid cyan;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px cyan;
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid cyan;
+      background: black;
+      color: white;
+    }
+
+    button {
+      border: 1px solid cyan;
+      background: black;
+      color: cyan;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: cyan;
+      color: black;
     }
   </style>
 </head>
 
 <body>
 
-<h2>Dashboard</h2>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>SuperXbet</h2>
 
-<div class="card">
-  Total Users: <span id="users">0</span>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="deposits.html">Deposits</a>
+  <a href="withdraws.html">Withdraws</a>
+
+  <a href="#" onclick="loadUsers()">Users</a>
+  <a href="kyc.html">KYC</a>
+  <a href="#" onclick="loadReferral()">Referral Tree</a>
+
+  <a href="#" onclick="loadBonus()">Bonus Control</a>
+  <a href="#" onclick="loadWager()">Wager Control</a>
+
+  <a href="#" onclick="loadBlocked()">Blocked Users</a>
+
+  <a href="live-odds.html">Live Odds</a>
+  <a href="settings.html">Payment Settings</a>
 </div>
 
-<div class="card">
-  Total Deposits: ₹<span id="deposits">0</span>
+<!-- MAIN -->
+<div class="main">
+
+  <h2>Dashboard</h2>
+
+  <!-- STATS -->
+  <div class="grid">
+    <div class="card">
+      <h3>Total Users</h3>
+      <p id="users">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Total Deposits</h3>
+      <p id="deposits">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Total Withdraws</h3>
+      <p id="withdraws">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Active Users</h3>
+      <p id="active">0</p>
+    </div>
+  </div>
+
+  <!-- DYNAMIC CONTENT -->
+  <div id="content"></div>
+
 </div>
 
 <script>
+
 const API = "https://superxbet-backend.onrender.com/api";
+const token = localStorage.getItem("adminToken");
 
-async function load(){
-
+/// ================= DASHBOARD =================
+async function loadDashboard(){
   const res = await fetch(API + "/admin/dashboard", {
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("adminToken")
-    }
+    headers: { Authorization: "Bearer " + token }
   });
 
   const data = await res.json();
 
   users.innerText = data.users || 0;
   deposits.innerText = data.deposits || 0;
+  withdraws.innerText = data.withdraws || 0;
+  active.innerText = data.active || 0;
 }
 
-load();
+loadDashboard();
+
+/// ================= USERS =================
+async function loadUsers(){
+  const res = await fetch(API + "/admin/users", {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const data = await res.json();
+
+  content.innerHTML = data.map(u => `
+    <div class="card">
+      ${u.phone} <br>
+      Balance: ₹${u.walletBalance}
+      <br><br>
+
+      <button onclick="blockUser('${u._id}')">Block</button>
+      <button onclick="deleteUser('${u._id}')">Delete</button>
+    </div>
+  `).join("");
+}
+
+async function deleteUser(id){
+  await fetch(API + "/admin/user/delete/" + id, { method:"POST" });
+  loadUsers();
+}
+
+async function blockUser(id){
+  await fetch(API + "/admin/user/block/" + id, { method:"POST" });
+  loadUsers();
+}
+
+/// ================= BONUS =================
+function loadBonus(){
+  content.innerHTML = `
+    <div class="card">
+      <h3>Bonus Control</h3>
+      <input id="uid" placeholder="User ID"><br>
+      <input id="amount" placeholder="Amount"><br><br>
+      <button onclick="addBonus()">Add Bonus</button>
+    </div>
+  `;
+}
+
+async function addBonus(){
+  await fetch(API + "/admin/bonus", {
+    method:"POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      userId: uid.value,
+      amount: amount.value
+    })
+  });
+
+  alert("Bonus Added");
+}
+
+/// ================= WAGER =================
+function loadWager(){
+  content.innerHTML = `
+    <div class="card">
+      <h3>Wager Control</h3>
+      <input id="uid" placeholder="User ID"><br>
+      <input id="wager" placeholder="Wager Left"><br><br>
+      <button onclick="setWager()">Update</button>
+    </div>
+  `;
+}
+
+async function setWager(){
+  await fetch(API + "/admin/wager", {
+    method:"POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      userId: uid.value,
+      wager: wager.value
+    })
+  });
+
+  alert("Updated");
+}
+
+/// ================= REFERRAL =================
+function loadReferral(){
+  content.innerHTML = `
+    <div class="card">
+      <h3>Referral Tree</h3>
+      <input id="uid" placeholder="User ID"><br><br>
+      <button onclick="getTree()">Load</button>
+      <pre id="tree"></pre>
+    </div>
+  `;
+}
+
+async function getTree(){
+  const res = await fetch(API + "/admin/referral/" + uid.value);
+  const data = await res.json();
+
+  tree.innerText = JSON.stringify(data, null, 2);
+}
+
+/// ================= BLOCKED =================
+async function loadBlocked(){
+  const res = await fetch(API + "/admin/blocked");
+  const data = await res.json();
+
+  content.innerHTML = data.map(u => `
+    <div class="card">${u.phone}</div>
+  `).join("");
+}
+
 </script>
 
 </body>
