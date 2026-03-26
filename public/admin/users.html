@@ -2,13 +2,13 @@
 <html>
 <head>
 <link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
 </head>
 
-<body>
+<body onload="protect();applyRoleControl();loadUsersPage()">
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-
   <a href="dashboard.html">Dashboard</a>
   <a href="banking.html">Banking</a>
   <a href="users.html">Users</a>
@@ -24,56 +24,32 @@
 </div>
 
 <div class="main">
+<h2>Users</h2>
 
-<div class="topbar">
-  <input placeholder="Search...">
-  <div>Admin</div>
-</div>
-
-<h2>Withdraws</h2>
-
-<div class="box">
-
+<div class="card">
 <table>
-<thead>
-<tr>
-<th>User</th>
-<th>Amount</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="data"></tbody>
+<tbody id="users"></tbody>
 </table>
-
 </div>
 
 </div>
 
 <script>
 
-async function load(){
+async function loadUsersPage(){
 
-const res = await fetch("/api/admin/withdraws");
-const data = await res.json();
+const data = await loadUsers();
 
-data.map(w=>{
-document.getElementById("data").innerHTML += `
+users.innerHTML = data.map(u=>`
 <tr>
-<td>${w.userId?.phone}</td>
-<td>₹${w.amount}</td>
-<td>${w.status}</td>
+<td>${u.phone}</td>
+<td>₹${u.walletBalance}</td>
 <td>
-<button class="btn-green" onclick="approve('${w._id}')">Approve</button>
+<button class="admin-only" onclick="deleteUser('${u._id}')">Delete</button>
 </td>
-</tr>
-`;
-});
+</tr>`).join("");
 
 }
-
-load();
-
 </script>
 
 </body>

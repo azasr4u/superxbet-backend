@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
+</head>
+
+<body onload="protect();applyRoleControl();loadBanking()">
+
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="banking.html">Banking</a>
+  <a href="users.html">Users</a>
+  <a href="kyc.html">KYC</a>
+
+  <div class="admin-only">
+    <a href="odds.html">Odds</a>
+    <a href="revenue.html">Revenue</a>
+    <a href="referral.html">Referral</a>
+    <a href="agents.html">Agents</a>
+    <a href="settings.html">Settings</a>
+  </div>
+</div>
+
+<div class="main">
+<h2>Banking</h2>
+
+<div class="card">
+
+<h3>Deposits</h3>
+<table>
+<tbody id="dep"></tbody>
+</table>
+
+<h3>Withdraws</h3>
+<table>
+<tbody id="with"></tbody>
+</table>
+
+</div>
+
+</div>
+
+<script>
+async function loadBanking(){
+
+const d = await loadDeposits();
+const w = await loadWithdraws();
+
+dep.innerHTML = d.map(x=>`
+<tr>
+<td>${x.userId?.phone}</td>
+<td>₹${x.amount}</td>
+<td>${x.status}</td>
+<td>
+${x.status==="Pending" ? `<button onclick="approveDeposit('${x._id}')">Approve</button>`:"Done"}
+</td>
+</tr>`).join("");
+
+with.innerHTML = w.map(x=>`
+<tr>
+<td>${x.userId?.phone}</td>
+<td>₹${x.amount}</td>
+<td>${x.status}</td>
+<td>
+${x.status==="Pending" ? `<button onclick="approveWithdraw('${x._id}')">Approve</button>`:"Done"}
+</td>
+</tr>`).join("");
+
+}
+</script>
+
+</body>
+</html>

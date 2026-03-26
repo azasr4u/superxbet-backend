@@ -11,6 +11,9 @@ import gameRoutes from "./routes/game.js";
 import depositRoutes from "./routes/deposit.js";
 import withdrawRoutes from "./routes/withdraw.js";
 import settingsRoutes from "./routes/settings.js";
+import betRoutes from "./routes/bet.js";
+
+
 
 const app = express();
 
@@ -40,6 +43,7 @@ app.use("/api/game", gameRoutes);
 app.use("/api/deposit", depositRoutes);
 app.use("/api/withdraw", withdrawRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/bet", betRoutes);
 
 // ✅ TEST
 app.get("/", (req, res) => {

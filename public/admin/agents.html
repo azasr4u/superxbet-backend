@@ -5,7 +5,7 @@
 <script src="script.js"></script>
 </head>
 
-<body onload="protect();applyRoleControl();loadDash()">
+<body onload="protect();applyRoleControl()">
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
@@ -24,25 +24,14 @@
 </div>
 
 <div class="main">
-<h2>Dashboard</h2>
 
-<div class="card" id="dash"></div>
+<h2>Agents</h2>
 
-<button onclick="logout()">Logout</button>
+<div class="card">
+Agent system next upgrade
 </div>
 
-<script>
-async function loadDash(){
-  const res = await fetch(API+"/admin/dashboard",{headers:authHeaders()});
-  const d = await res.json();
-
-  dash.innerHTML = `
-    Users: ${d.users}<br>
-    Deposits: ₹${d.deposits}<br>
-    Withdraws: ₹${d.withdraws}
-  `;
-}
-</script>
+</div>
 
 </body>
 </html>

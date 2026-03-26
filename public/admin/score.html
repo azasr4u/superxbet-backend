@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
+</head>
+
+<body onload="protect();applyRoleControl();loadMatch()">
+
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+
+  <a href="dashboard.html">Dashboard</a>
+  <a href="score.html">Score Control</a>
+  <a href="banking.html">Banking</a>
+  <a href="users.html">Users</a>
+</div>
+
+<div class="main">
+
+<h2>Live Score Control</h2>
+
+<div class="card">
+
+<input id="matchName" placeholder="Match"><br><br>
+
+<input id="teamA" placeholder="Team A"><br><br>
+<input id="teamB" placeholder="Team B"><br><br>
+
+<input id="score" placeholder="Score"><br><br>
+<input id="wickets" placeholder="Wickets"><br><br>
+<input id="overs" placeholder="Overs"><br><br>
+<input id="target" placeholder="Target"><br><br>
+
+<select id="innings">
+  <option value="1">1st Innings</option>
+  <option value="2">2nd Innings</option>
+</select>
+
+<br><br>
+
+<label>Adjust Odds (%)</label><br>
+<input type="range" id="adjust" min="-20" max="20" value="0" oninput="showAdjust()">
+<span id="adjustVal">0%</span>
+
+<br><br>
+
+<button onclick="updateScore()">🚀 Update Score + Odds</button>
+
+<br><br>
+
+<div id="autoOdds"></div>
+<div id="finalOdds"></div>
+
+</div>
+
+</div>
+
+<script>
+
+function showAdjust(){
+  adjustVal.innerText = adjust.value + "%";
+}
+
+async function loadMatch(){
+  const res = await fetch(API+"/admin/match");
+  const m = await res.json();
+  if (!m) return;
+
+  matchName.value = m.matchName;
+  teamA.value = m.teamA;
+  teamB.value = m.teamB;
+  score.value = m.score;
+  wickets.value = m.wickets;
+  overs.value = m.overs;
+  target.value = m.target;
+  innings.value = m.innings;
+}
+
+async function updateScore(){
+
+const res = await fetch(API+"/admin/match/update-with-odds",{
+method:"POST",
+headers:authHeaders(),
+body: JSON.stringify({
+matchName: matchName.value,
+teamA: teamA.value,
+teamB: teamB.value,
+score: Number(score.value),
+wickets: Number(wickets.value),
+overs: Number(overs.value),
+target: Number(target.value),
+innings: Number(innings.value),
+adjust: Number(adjust.value)
+})
+});
+
+const data = await res.json();
+
+autoOdds.innerHTML = `
+<h3>Auto Odds</h3>
+${teamA.value}: ${data.autoOdds.teamA}<br>
+${teamB.value}: ${data.autoOdds.teamB}
+`;
+
+finalOdds.innerHTML = `
+<h3>Final Odds</h3>
+${teamA.value}: ${data.finalOdds.teamA}<br>
+${teamB.value}: ${data.finalOdds.teamB}
+`;
+
+}
+
+</script>
+
+</body>
+</html>

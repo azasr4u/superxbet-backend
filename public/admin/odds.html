@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
+</head>
+
+<body onload="protect();applyRoleControl()">
+
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+
+  <a href="dashboard.html">Dashboard</a>
+  <a href="banking.html">Banking</a>
+  <a href="users.html">Users</a>
+  <a href="kyc.html">KYC</a>
+
+  <div class="admin-only">
+    <a href="odds.html">Odds</a>
+    <a href="revenue.html">Revenue</a>
+    <a href="referral.html">Referral</a>
+    <a href="agents.html">Agents</a>
+    <a href="settings.html">Settings</a>
+  </div>
+</div>
+
+<div class="main">
+
+<h2>Live Match Control</h2>
+
+<div class="card">
+
+<input id="matchName" placeholder="Match Name"><br><br>
+
+<input id="teamA" placeholder="Team A"><br><br>
+<input id="teamB" placeholder="Team B"><br><br>
+
+<input id="score" placeholder="Score (120)"><br><br>
+<input id="wickets" placeholder="Wickets (3)"><br><br>
+<input id="overs" placeholder="Overs (14.2)"><br><br>
+<input id="target" placeholder="Target (180)"><br><br>
+
+<select id="innings">
+  <option value="1">1st Innings</option>
+  <option value="2">2nd Innings</option>
+</select>
+
+<br><br>
+
+<button onclick="updateMatch()">🚀 Update Score + Odds</button>
+
+<br><br>
+
+<div id="result"></div>
+
+</div>
+
+</div>
+
+<script>
+
+async function updateMatch(){
+
+const res = await fetch(API+"/admin/match/update-with-odds",{
+method:"POST",
+headers:authHeaders(),
+body: JSON.stringify({
+matchName: matchName.value,
+teamA: teamA.value,
+teamB: teamB.value,
+score: Number(score.value),
+wickets: Number(wickets.value),
+overs: Number(overs.value),
+target: Number(target.value),
+innings: Number(innings.value)
+})
+});
+
+const data = await res.json();
+
+result.innerHTML = `
+<h3>Odds Updated</h3>
+Team A: ${data.odds.teamA}<br>
+Team B: ${data.odds.teamB}
+`;
+
+}
+
+</script>
+
+</body>
+</html>

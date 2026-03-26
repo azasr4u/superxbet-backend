@@ -2,13 +2,13 @@
 <html>
 <head>
 <link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
 </head>
 
-<body>
+<body onload="protect();applyRoleControl();loadKYCPage()">
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-
   <a href="dashboard.html">Dashboard</a>
   <a href="banking.html">Banking</a>
   <a href="users.html">Users</a>
@@ -25,55 +25,31 @@
 
 <div class="main">
 
-<div class="topbar">
-  <input placeholder="Search...">
-  <div>Admin</div>
-</div>
+<h2>KYC</h2>
 
-<h2>Withdraws</h2>
-
-<div class="box">
-
+<div class="card">
 <table>
-<thead>
-<tr>
-<th>User</th>
-<th>Amount</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="data"></tbody>
+<tbody id="kyc"></tbody>
 </table>
-
 </div>
 
 </div>
 
 <script>
 
-async function load(){
+async function loadKYCPage(){
 
-const res = await fetch("/api/admin/withdraws");
-const data = await res.json();
+const data = await loadKYC();
 
-data.map(w=>{
-document.getElementById("data").innerHTML += `
+kyc.innerHTML = data.map(k=>`
 <tr>
-<td>${w.userId?.phone}</td>
-<td>₹${w.amount}</td>
-<td>${w.status}</td>
+<td>${k.userId?.phone}</td>
 <td>
-<button class="btn-green" onclick="approve('${w._id}')">Approve</button>
+<button onclick="approveKYC('${k._id}')">Approve</button>
 </td>
-</tr>
-`;
-});
+</tr>`).join("");
 
 }
-
-load();
-
 </script>
 
 </body>

@@ -1,21 +1,26 @@
-import User from "../models/User.js";
+import mongoose from "mongoose";
 
-export const settleBet = async (userId, winAmount) => {
+const betSchema = new mongoose.Schema({
 
-  const user = await User.findById(userId);
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
 
-  // 💰 add winnings
-  user.walletBalance += winAmount;
+  match: String,
 
-  // 🔥 REDUCE WAGER USING WIN ONLY
-  if (user.wageringRequired > 0) {
+  team: String, // Team A or Team B
 
-    user.wageringRequired -= winAmount;
+  odds: Number,
 
-    if (user.wageringRequired < 0) {
-      user.wageringRequired = 0;
-    }
+  amount: Number,
+
+  status: {
+    type: String,
+    enum: ["pending", "won", "lost"],
+    default: "pending"
   }
 
-  await user.save();
-};
+}, { timestamps: true });
+
+export default mongoose.model("Bet", betSchema);

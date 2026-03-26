@@ -2,13 +2,13 @@
 <html>
 <head>
 <link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
 </head>
 
-<body>
+<body onload="protect();applyRoleControl()">
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-
   <a href="dashboard.html">Dashboard</a>
   <a href="banking.html">Banking</a>
   <a href="users.html">Users</a>
@@ -25,51 +25,30 @@
 
 <div class="main">
 
-<div class="header">
-  <h1>Deposits</h1>
-</div>
+<h2>Referral Bonus</h2>
 
 <div class="card">
+<input id="uid" placeholder="User ID"><br><br>
+<input id="amt" placeholder="Amount"><br><br>
 
-<table>
-<thead>
-<tr>
-<th>User</th>
-<th>Amount</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
-
-<tbody id="data"></tbody>
-
-</table>
-
+<button onclick="add()">Add</button>
 </div>
 
 </div>
 
 <script>
 
-async function load(){
-
-const res = await fetch("/api/admin/deposits");
-const data = await res.json();
-
-document.getElementById("data").innerHTML = data.map(d=>`
-<tr>
-<td>${d.userId?.phone}</td>
-<td>₹${d.amount}</td>
-<td>${d.status}</td>
-<td>
-<button class="btn primary" onclick="approve('${d._id}')">Approve</button>
-</td>
-</tr>
-`).join("");
-
+async function add(){
+await fetch(API+"/admin/bonus",{
+method:"POST",
+headers:authHeaders(),
+body: JSON.stringify({
+userId: uid.value,
+amount: amt.value
+})
+});
+alert("Done");
 }
-
-load();
 
 </script>
 

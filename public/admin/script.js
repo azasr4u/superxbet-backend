@@ -1,16 +1,29 @@
-// ✅ API URL (Render backend)
-const API = "https://superxbet-backend.onrender.com/api/admin";
+const API = "https://superxbet-backend.onrender.com/api";
+let token = localStorage.getItem("token");
+let role = localStorage.getItem("role");
 
+/// ================= AUTH PROTECT =================
+function protect() {
+  if (!token) {
+    window.location.href = "admin-login.html";
+  }
+}
 
-// ================= LOGIN =================
+/// ================= ROLE CONTROL =================
+function applyRoleControl() {
+  if (role !== "admin") {
+    document.querySelectorAll(".admin-only")
+      .forEach(e => e.style.display = "none");
+  }
+}
+
+/// ================= LOGIN =================
 async function login() {
   try {
-    console.log("Login clicked");
-
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
-    const res = await fetch(API + "/login", {
+    const res = await fetch(API + "/admin/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -19,129 +32,80 @@ async function login() {
     });
 
     const data = await res.json();
-    console.log("LOGIN RESPONSE:", data);
 
     if (res.status === 200) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
 
-      window.location.href = "dashboard.html";
+      if (data.role === "agent") {
+        window.location.href = "banking.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+
     } else {
       alert(data.error || "Login failed");
     }
 
   } catch (err) {
-    console.log("LOGIN ERROR:", err);
+    console.log(err);
     alert("Server error");
   }
 }
 
-
-// ================= AUTH CHECK =================
-function checkAuth() {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    alert("Please login first");
-    window.location.href = "admin-login.html";
-  }
-
-  return token;
+/// ================= COMMON FETCH =================
+function authHeaders() {
+  return {
+    "Authorization": "Bearer " + token,
+    "Content-Type": "application/json"
+  };
 }
 
-
-// ================= LOAD DEPOSITS =================
+/// ================= LOAD DEPOSITS =================
 async function loadDeposits() {
-  const token = checkAuth();
-
   try {
-    const res = await fetch(API + "/deposits", {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+    const res = await fetch(API + "/admin/deposits", {
+      headers: authHeaders()
     });
 
     const data = await res.json();
-    render(data, "deposit");
+    return data;
 
   } catch (err) {
     console.log(err);
     alert("Failed to load deposits");
+    return [];
   }
 }
 
-
-// ================= LOAD WITHDRAWS =================
+/// ================= LOAD WITHDRAWS =================
 async function loadWithdraws() {
-  const token = checkAuth();
-
   try {
-    const res = await fetch(API + "/withdraws", {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+    const res = await fetch(API + "/admin/withdraws", {
+      headers: authHeaders()
     });
 
     const data = await res.json();
-    render(data, "withdraw");
+    return data;
 
   } catch (err) {
     console.log(err);
     alert("Failed to load withdraws");
+    return [];
   }
 }
 
-
-// ================= RENDER (ONLY PENDING) =================
-function render(list, type) {
-  const div = document.getElementById("data");
-  div.innerHTML = "";
-
-  if (!list || !list.length) {
-    div.innerHTML = "<p>No data</p>";
-    return;
-  }
-
-  // ✅ FILTER ONLY PENDING
-  const filtered = list.filter(item => item.status === "Pending");
-
-  if (!filtered.length) {
-    div.innerHTML = "<p>No pending requests</p>";
-    return;
-  }
-
-  filtered.forEach(item => {
-    const user = item.userId?.phone || "Unknown";
-
-    div.innerHTML += `
-      <div style="border:1px solid #444; padding:12px; margin:10px; border-radius:8px;">
-        <b>User:</b> ${user}<br>
-        <b>Amount:</b> ₹${item.amount}<br>
-        <b>Status:</b> ${item.status}<br><br>
-
-        <button onclick="approve('${item._id}','${type}')" style="margin-right:10px;">✅ Approve</button>
-        <button onclick="reject('${item._id}','${type}')">❌ Reject</button>
-      </div>
-    `;
-  });
-}
-
-
-// ================= APPROVE =================
-async function approve(id, type) {
-  const token = checkAuth();
-
+/// ================= APPROVE DEPOSIT =================
+async function approveDeposit(id) {
   try {
-    const res = await fetch(`${API}/${type}/approve/${id}`, {
+    const res = await fetch(API + "/admin/deposit/approve/" + id, {
       method: "POST",
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+      headers: authHeaders()
     });
 
     const data = await res.json();
-
     alert(data.message || "Approved");
+
     location.reload();
 
   } catch (err) {
@@ -150,35 +114,99 @@ async function approve(id, type) {
   }
 }
 
-
-// ================= REJECT =================
-async function reject(id, type) {
-  const token = checkAuth();
-
+/// ================= APPROVE WITHDRAW =================
+async function approveWithdraw(id) {
   try {
-    const res = await fetch(`${API}/${type}/reject/${id}`, {
+    const res = await fetch(API + "/admin/withdraw/approve/" + id, {
       method: "POST",
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+      headers: authHeaders()
     });
 
     const data = await res.json();
+    alert(data.message || "Approved");
 
-    alert(data.message || "Rejected");
     location.reload();
 
   } catch (err) {
     console.log(err);
-    alert("Reject failed");
+    alert("Approve failed");
   }
 }
 
+/// ================= LOAD USERS =================
+async function loadUsers() {
+  try {
+    const res = await fetch(API + "/admin/users", {
+      headers: authHeaders()
+    });
 
-// ================= LOGOUT =================
+    const data = await res.json();
+    return data;
+
+  } catch (err) {
+    console.log(err);
+    alert("Failed to load users");
+    return [];
+  }
+}
+
+/// ================= DELETE USER (ADMIN ONLY) =================
+async function deleteUser(id) {
+  try {
+    const res = await fetch(API + "/admin/user/delete/" + id, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    const data = await res.json();
+    alert(data.message || "Deleted");
+
+    location.reload();
+
+  } catch (err) {
+    console.log(err);
+    alert("Delete failed");
+  }
+}
+
+/// ================= LOAD KYC =================
+async function loadKYC() {
+  try {
+    const res = await fetch(API + "/admin/kyc", {
+      headers: authHeaders()
+    });
+
+    const data = await res.json();
+    return data;
+
+  } catch (err) {
+    console.log(err);
+    alert("Failed to load KYC");
+    return [];
+  }
+}
+
+/// ================= APPROVE KYC =================
+async function approveKYC(id) {
+  try {
+    const res = await fetch(API + "/admin/kyc/approve/" + id, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    const data = await res.json();
+    alert(data.message || "Approved");
+
+    location.reload();
+
+  } catch (err) {
+    console.log(err);
+    alert("KYC failed");
+  }
+}
+
+/// ================= LOGOUT =================
 function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-
+  localStorage.clear();
   window.location.href = "admin-login.html";
 }

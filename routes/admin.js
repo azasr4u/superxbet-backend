@@ -1,3 +1,4 @@
+import { verifyToken, adminOnly, adminOrAgent } from "../middleware/auth.js";
 import { applyReferralBonus } from "../services/referralService.js";
 import express from "express";
 import bcrypt from "bcryptjs";
@@ -8,32 +9,15 @@ import Withdraw from "../models/Withdraw.js";
 import User from "../models/User.js";
 import KYC from "../models/KYC.js";
 import LiveOdds from "../models/LiveOdds.js";
+import Match from "../models/Match.js";
+import Bet from "../models/Bet.js";
 
 const router = express.Router();
 const SECRET = "superxbet_secret";
 
-// ================= AUTH =================
-const verifyAdmin = (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ error: "No token" });
-
-    const decoded = jwt.verify(token, SECRET);
-
-    if (decoded.role !== "admin" && decoded.role !== "agent") {
-      return res.status(403).json({ error: "Access denied" });
-    }
-
-    req.user = decoded;
-    next();
-
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-  }
-};
-
-// ================= LOGIN =================
+/// ================= LOGIN =================
 router.post("/login", async (req, res) => {
+
   const { username, password } = req.body;
 
   const user = await User.findOne({
@@ -55,11 +39,12 @@ router.post("/login", async (req, res) => {
     { expiresIn: "7d" }
   );
 
-  res.json({ token });
+  res.json({ token, role: user.role });
 });
 
-// ================= DASHBOARD =================
-router.get("/dashboard", verifyAdmin, async (req, res) => {
+
+/// ================= DASHBOARD =================
+router.get("/dashboard", verifyToken, adminOrAgent, async (req, res) => {
 
   const users = await User.countDocuments();
 
@@ -76,29 +61,30 @@ router.get("/dashboard", verifyAdmin, async (req, res) => {
   res.json({
     users,
     deposits: deposits[0]?.total || 0,
-    withdraws: withdraws[0]?.total || 0,
-    active: users
+    withdraws: withdraws[0]?.total || 0
   });
 });
 
-// ================= USERS =================
-router.get("/users", verifyAdmin, async (req, res) => {
+
+/// ================= USERS =================
+router.get("/users", verifyToken, adminOrAgent, async (req, res) => {
   const users = await User.find().select("-password");
   res.json(users);
 });
 
-router.post("/user/delete/:id", verifyAdmin, async (req, res) => {
+router.post("/user/delete/:id", verifyToken, adminOnly, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-router.post("/user/block/:id", verifyAdmin, async (req, res) => {
+router.post("/user/block/:id", verifyToken, adminOnly, async (req, res) => {
   await User.findByIdAndUpdate(req.params.id, { blocked: true });
   res.json({ message: "Blocked" });
 });
 
-// ================= BONUS =================
-router.post("/bonus", verifyAdmin, async (req, res) => {
+
+/// ================= BONUS =================
+router.post("/bonus", verifyToken, adminOnly, async (req, res) => {
   const { userId, amount } = req.body;
 
   await User.findByIdAndUpdate(userId, {
@@ -108,8 +94,9 @@ router.post("/bonus", verifyAdmin, async (req, res) => {
   res.json({ message: "Bonus added" });
 });
 
-// ================= WAGER =================
-router.post("/wager", verifyAdmin, async (req, res) => {
+
+/// ================= WAGER =================
+router.post("/wager", verifyToken, adminOnly, async (req, res) => {
   const { userId, wager } = req.body;
 
   await User.findByIdAndUpdate(userId, {
@@ -119,30 +106,20 @@ router.post("/wager", verifyAdmin, async (req, res) => {
   res.json({ message: "Updated" });
 });
 
-// ================= REFERRAL =================
-router.get("/referral/:id", verifyAdmin, async (req, res) => {
-  const users = await User.find({ referredBy: req.params.id });
-  res.json(users);
-});
 
-// ================= BLOCKED =================
-router.get("/blocked", verifyAdmin, async (req, res) => {
-  const users = await User.find({ blocked: true });
-  res.json(users);
-});
-
-// ================= DEPOSITS =================
-router.get("/deposits", verifyAdmin, async (req, res) => {
+/// ================= DEPOSITS =================
+router.get("/deposits", verifyToken, adminOrAgent, async (req, res) => {
   const deposits = await Deposit.find().populate("userId");
   res.json(deposits);
 });
 
-router.post("/deposit/approve/:id", verifyAdmin, async (req, res) => {
+router.post("/deposit/approve/:id", verifyToken, adminOrAgent, async (req, res) => {
 
   const deposit = await Deposit.findById(req.params.id);
 
-  if (!deposit) return res.status(404).json({ error: "Not found" });
-  if (deposit.status !== "Pending") return res.status(400).json({ error: "Already processed" });
+  if (!deposit || deposit.status !== "Pending") {
+    return res.status(400).json({ error: "Invalid request" });
+  }
 
   deposit.status = "Approved";
   await deposit.save();
@@ -156,20 +133,17 @@ router.post("/deposit/approve/:id", verifyAdmin, async (req, res) => {
   res.json({ message: "Approved" });
 });
 
-// ================= WITHDRAW =================
-router.get("/withdraws", verifyAdmin, async (req, res) => {
+
+/// ================= WITHDRAW =================
+router.get("/withdraws", verifyToken, adminOrAgent, async (req, res) => {
   const data = await Withdraw.find().populate("userId");
   res.json(data);
 });
 
-router.post("/withdraw/approve/:id", verifyAdmin, async (req, res) => {
+router.post("/withdraw/approve/:id", verifyToken, adminOrAgent, async (req, res) => {
 
   const withdraw = await Withdraw.findById(req.params.id);
   const user = await User.findById(withdraw.userId);
-
-  if (user.wageringRequired > 0) {
-    return res.status(400).json({ error: "Complete wagering first" });
-  }
 
   if (user.walletBalance < withdraw.amount) {
     return res.status(400).json({ error: "Insufficient balance" });
@@ -184,43 +158,131 @@ router.post("/withdraw/approve/:id", verifyAdmin, async (req, res) => {
   res.json({ message: "Withdraw approved" });
 });
 
-// ================= KYC =================
-router.get("/kyc", verifyAdmin, async (req, res) => {
-  const data = await KYC.find({ status: "Pending" }).populate("userId");
-  res.json(data);
-});
 
-router.post("/kyc/approve/:id", verifyAdmin, async (req, res) => {
+/// ================= ADVANCED ODDS ENGINE =================
+function calculateOdds(match) {
 
-  const kyc = await KYC.findById(req.params.id);
+  const { score, overs, wickets, target, innings } = match;
 
-  kyc.status = "Approved";
-  await kyc.save();
+  if (innings === 1) {
+    return { teamA: 1.95, teamB: 1.95 };
+  }
 
-  await User.findByIdAndUpdate(kyc.userId, {
-    kycVerified: true
-  });
+  const ballsPlayed = Math.floor(overs) * 6 + (overs % 1) * 10;
+  const ballsLeft = 120 - ballsPlayed;
 
-  res.json({ message: "Approved" });
-});
+  const runsNeeded = target - score;
+  const requiredRR = runsNeeded / (ballsLeft / 6);
+  const currentRR = score / overs;
 
-router.post("/kyc/reject/:id", verifyAdmin, async (req, res) => {
-  await KYC.findByIdAndDelete(req.params.id);
-  res.json({ message: "Rejected" });
-});
+  let strength = currentRR - requiredRR;
 
-// ================= LIVE ODDS =================
-router.post("/live-odds", verifyAdmin, async (req, res) => {
+  if (wickets >= 5) strength -= 1;
+  if (wickets >= 8) strength -= 2;
 
-  const { match, odds } = req.body;
+  if (overs > 16) {
+    if (requiredRR > 10) strength -= 1.5;
+    else strength += 0.5;
+  }
+
+  if (overs < 6 && wickets <= 1) {
+    strength += 0.5;
+  }
+
+  let teamA = 1.9 - strength * 0.25;
+  let teamB = 1.9 + strength * 0.25;
+
+  teamA += 0.05;
+  teamB += 0.05;
+
+  return {
+    teamA: Number(Math.max(1.2, Math.min(5, teamA)).toFixed(2)),
+    teamB: Number(Math.max(1.2, Math.min(5, teamB)).toFixed(2))
+  };
+}
+
+
+/// ================= SCORE + ODDS =================
+router.post("/match/update-with-odds",
+  verifyToken,
+  adminOrAgent,
+  async (req, res) => {
+
+  let match = await Match.findOne();
+
+  if (!match) match = new Match(req.body);
+  else Object.assign(match, req.body);
+
+  await match.save();
+
+  const autoOdds = calculateOdds(match);
+
+  let finalOdds = { ...autoOdds };
+  const adjust = Number(req.body.adjust || 0);
+
+  if (adjust !== 0) {
+    finalOdds.teamA *= (1 + adjust / 100);
+    finalOdds.teamB *= (1 - adjust / 100);
+  }
 
   await LiveOdds.findOneAndUpdate(
     {},
-    { match, odds },
+    { match: match.matchName, odds: finalOdds },
     { upsert: true }
   );
 
-  res.json({ message: "Updated" });
+  res.json({ autoOdds, finalOdds });
+});
+
+
+/// ================= RESULT SETTLEMENT =================
+router.post("/match/result",
+  verifyToken,
+  adminOnly,
+  async (req, res) => {
+
+  const { winner } = req.body; // "A" or "B"
+
+  const live = await LiveOdds.findOne();
+
+  if (!live) return res.status(400).json({ error: "No match" });
+
+  const bets = await Bet.find({
+    match: live.match,
+    status: "pending"
+  });
+
+  for (let bet of bets) {
+
+    const user = await User.findById(bet.userId);
+
+    if (bet.team === winner) {
+      const winAmount = bet.amount * bet.odds;
+      user.walletBalance += winAmount;
+      bet.status = "won";
+    } else {
+      bet.status = "lost";
+    }
+
+    await user.save();
+    await bet.save();
+  }
+
+  res.json({ message: "All bets settled" });
+});
+
+
+/// ================= GET MATCH =================
+router.get("/match", async (req, res) => {
+  const match = await Match.findOne();
+  res.json(match);
+});
+
+
+/// ================= LIVE ODDS =================
+router.get("/live-odds", async (req, res) => {
+  const data = await LiveOdds.findOne();
+  res.json(data);
 });
 
 export default router;
