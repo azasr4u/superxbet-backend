@@ -2,7 +2,9 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import authMiddleware from "../middleware/auth.js";
+import {
+  verifyToken
+} from "../middleware/auth.js";
 
 const router = express.Router();
 const JWT_SECRET = "superxbet_secret";
@@ -96,7 +98,7 @@ router.post("/login", async (req, res) => {
 
 
 // ================= PROFILE =================
-router.get("/profile", authMiddleware, async (req, res) => {
+router.get("/profile", verifyToken, async (req, res) => {
   const user = await User.findById(req.user.id);
 
   res.json({

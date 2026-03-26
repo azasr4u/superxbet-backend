@@ -9,11 +9,16 @@ const betSchema = new mongoose.Schema({
 
   match: String,
 
-  team: String, // Team A or Team B
-
+  /// 🔥 NORMAL BET (OLD)
+  team: String,
   odds: Number,
-
   amount: Number,
+
+  /// 🔥 BUILDER BET (NEW)
+  selections: Object,
+  stake: Number,
+
+  potentialWin: Number,
 
   status: {
     type: String,
