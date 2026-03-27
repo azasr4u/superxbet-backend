@@ -1,58 +1,70 @@
 const express = require("express");
 const router = express.Router();
 const Bet = require("../models/Bet");
+const User = require("../models/User");
+const auth = require("../middleware/auth");
 
-/// 🔥 PLACE BET (FIXED)
-router.post("/place", async (req, res) => {
+/// 🔥 PLACE BET WITH WALLET DEDUCTION
+router.post("/place", auth, async (req, res) => {
   try {
-    const { userId, match, selection, odds, stake } = req.body;
+    const userId = req.user.id;
 
-    if (!userId || !selection || !stake) {
+    const { match, selection, selections, odds, stake } = req.body;
+
+    if (!selection || !stake) {
       return res.status(400).json({ msg: "Invalid bet" });
     }
 
-    const potentialWin = stake * odds;
+    const user = await User.findById(userId);
 
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    /// 🔥 CHECK BALANCE
+    if (user.walletBalance < stake) {
+      return res.status(400).json({ msg: "Insufficient balance" });
+    }
+
+    /// 🔥 DEDUCT WALLET
+    user.walletBalance -= stake;
+    await user.save();
+
+    /// 🔥 CREATE BET
     const bet = new Bet({
       userId,
       match,
-
-      /// ✅ FIXED FIELD
-      selection: selection,
-
-      odds: odds,
-      stake: stake,
-
-      /// ✅ FIXED NAME
-      potentialWin: potentialWin,
-
-      status: "pending"
+      selection,
+      selections: selections || null,
+      odds,
+      stake,
+      potentialWin: stake * odds,
+      status: "pending",
     });
 
     await bet.save();
 
     res.json({
       success: true,
-      msg: "Bet placed successfully ✅",
+      msg: "Bet placed",
+      walletBalance: user.walletBalance,
       bet,
     });
 
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, msg: "Server error" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 
-
-/// 🔥 GET MY BETS (IMPORTANT FIX)
-router.get("/my/:userId", async (req, res) => {
+/// 🔥 GET MY BETS
+router.get("/my", auth, async (req, res) => {
   try {
-    const bets = await Bet.find({ userId: req.params.userId })
+    const bets = await Bet.find({ userId: req.user.id })
       .sort({ createdAt: -1 });
 
     res.json(bets);
-
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ msg: "Error fetching bets" });
   }
 });
