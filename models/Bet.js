@@ -9,16 +9,22 @@ const betSchema = new mongoose.Schema({
 
   match: String,
 
-  /// 🔥 NORMAL BET (OLD)
-  team: String,
-  odds: Number,
-  amount: Number,
+  /// ✅ SINGLE BET (MAIN FIX)
+  selection: {
+    type: String,
+    required: true
+  },
 
-  /// 🔥 BUILDER BET (NEW)
-  selections: Object,
+  odds: Number,
   stake: Number,
 
   potentialWin: Number,
+
+  /// 🔥 OPTIONAL (FUTURE BUILDER SUPPORT)
+  selections: {
+    type: Object,
+    default: null
+  },
 
   status: {
     type: String,

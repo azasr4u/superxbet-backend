@@ -88,7 +88,7 @@ router.post("/login", async (req, res) => {
     id: user._id,
     fullName: user.fullName,
     phone: user.phone,
-    wallet: user.walletBalance
+    walletBalance: user.walletBalance,
   }
 });
   } catch (err) {
@@ -99,19 +99,28 @@ router.post("/login", async (req, res) => {
 
 // ================= PROFILE =================
 router.get("/profile", verifyToken, async (req, res) => {
-  const user = await User.findById(req.user.id);
+  try {
+    const user = await User.findById(req.user.id);
 
-  res.json({
-    fullName: user.fullName,
-    phone: user.phone,
-    email: user.email,
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    wallet: user.walletBalance,
-    bonus: user.bonusBalance,
-    wagering: user.wageringRequired,
+    res.json({
+      fullName: user.fullName,
+      phone: user.phone,
+      email: user.email,
 
-    referralCode: user.referralCode
-  });
+      walletBalance: user.walletBalance || 0, // ✅ CRITICAL FIX
+
+      bonus: user.bonusBalance || 0,
+      wagering: user.wageringRequired || 0,
+
+      referralCode: user.referralCode
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
-
 export default router;

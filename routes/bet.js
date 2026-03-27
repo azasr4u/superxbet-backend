@@ -1,84 +1,63 @@
 import express from "express";
 import Bet from "../models/Bet.js";
 import User from "../models/User.js";
-import LiveOdds from "../models/LiveOdds.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-
-/// ================= NORMAL BET =================
+/// 🔥 PLACE MARKET BET (FINAL FIXED)
 router.post("/market", verifyToken, async (req, res) => {
-
   try {
     const { type, selection, odds, stake } = req.body;
 
     const user = await User.findById(req.user.id);
 
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    if (user.walletBalance < stake) {
-      return res.status(400).json({ error: "Insufficient balance" });
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
     }
 
+    /// ✅ CHECK BALANCE
+    if ((user.walletBalance || 0) < stake) {
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    /// ✅ DEDUCT WALLET
     user.walletBalance -= stake;
     await user.save();
 
-    const bet = await Bet.create({
+    /// ✅ SAVE BET
+    const bet = new Bet({
       userId: user._id,
-      match: "LIVE MATCH",
-      selections: { type, selection },
+      type,
+      selection,
       odds,
       stake,
-      potentialWin: stake * odds,
+      status: "pending",
+      createdAt: new Date()
     });
 
-    res.json({ message: "Bet placed", bet });
+    await bet.save();
+
+    res.json({
+      success: true,
+      message: "Bet placed",
+      newBalance: user.walletBalance
+    });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log(err);
+    res.json({ success: false, message: "Server error" });
   }
 });
 
-
-/// ================= BUILDER BET =================
-router.post("/builder", verifyToken, async (req, res) => {
-
-  const { selections, stake, odds } = req.body;
-
-  const user = await User.findById(req.user.id);
-
-  if (!user) return res.status(404).json({ error: "User not found" });
-
-  if (user.walletBalance < stake) {
-    return res.status(400).json({ error: "Insufficient balance" });
-  }
-
-  const live = await LiveOdds.findOne();
-
-  user.walletBalance -= stake;
-  await user.save();
-
-  const bet = await Bet.create({
-    userId: user._id,
-    match: live?.match || "Custom Match",
-    selections,
-    stake,
-    odds,
-    potentialWin: stake * odds
-  });
-
-  res.json({ message: "Builder bet placed", bet });
-});
-
-
-/// ================= HISTORY =================
+/// 🔥 GET MY BETS
 router.get("/my", verifyToken, async (req, res) => {
-
-  const bets = await Bet.find({ userId: req.user.id })
-    .sort({ createdAt: -1 });
-
-  res.json(bets);
+  try {
+    const bets = await Bet.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    res.json(bets);
+  } catch {
+    res.json([]);
+  }
 });
 
 export default router;

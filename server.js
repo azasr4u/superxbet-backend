@@ -13,7 +13,8 @@ import withdrawRoutes from "./routes/withdraw.js";
 import settingsRoutes from "./routes/settings.js";
 import betRoutes from "./routes/bet.js";
 import oddsRoutes from "./routes/odds.js";
-
+import adminBanking from "./routes/adminBanking.js";
+import userRoutes from "./routes/user.js";
 
 
 
@@ -48,7 +49,8 @@ app.use("/api/withdraw", withdrawRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/bet", betRoutes);
 app.use("/api/odds", oddsRoutes);
-
+app.use("/api/admin", adminBanking);
+app.use("/api/user", userRoutes);
 // ✅ TEST
 app.get("/", (req, res) => {
   res.send("SuperXbet Backend Running 🚀");
