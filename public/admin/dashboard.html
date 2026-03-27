@@ -1,57 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Dashboard</title>
 
 <style>
 body {
+  margin:0;
   font-family:Segoe UI;
   background: linear-gradient(135deg,#667eea,#764ba2);
   color:white;
+}
+
+.topbar {
+  display:flex;
+  justify-content:space-between;
+  padding:20px;
+}
+
+.logout {
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(135deg,#ff7e5f,#feb47b);
+  color:white;
+  cursor:pointer;
+}
+
+.container {
   padding:20px;
 }
 
 .grid {
   display:grid;
   grid-template-columns:repeat(4,1fr);
-  gap:15px;
+  gap:20px;
 }
 
 .card {
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
+  background:rgba(255,255,255,0.2);
+  backdrop-filter:blur(10px);
   padding:20px;
-  border-radius:15px;
+  border-radius:12px;
+}
+
+.title {
+  font-size:14px;
 }
 
 .value {
   font-size:26px;
   font-weight:bold;
+  margin-top:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>📊 Dashboard</h2>
+<div class="topbar">
+  <h2>📊 Admin Dashboard</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
 
-<div class="grid">
-  <div class="card"><div>Users</div><div id="users" class="value"></div></div>
-  <div class="card"><div>Deposits</div><div id="dep" class="value"></div></div>
-  <div class="card"><div>Withdraws</div><div id="withdraw" class="value"></div></div>
-  <div class="card"><div>Profit</div><div id="profit" class="value"></div></div>
+<div class="container">
+
+  <div class="grid">
+    <div class="card">
+      <div class="title">Users</div>
+      <div id="users" class="value">0</div>
+    </div>
+
+    <div class="card">
+      <div class="title">Deposits</div>
+      <div id="dep" class="value">₹0</div>
+    </div>
+
+    <div class="card">
+      <div class="title">Withdraws</div>
+      <div id="with" class="value">₹0</div>
+    </div>
+
+    <div class="card">
+      <div class="title">Profit</div>
+      <div id="profit" class="value">₹0</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
+
+// 🔒 AUTH PROTECT
 const token = localStorage.getItem("adminToken");
 
-// 🔒 Protect page
 if (!token) {
   window.location.href = "/admin/login.html";
 }
 
-async function load(){
+// 🚪 LOGOUT
+function logout(){
+  localStorage.removeItem("adminToken");
+  window.location.href = "/admin/login.html";
+}
+
+// 📊 LOAD DASHBOARD DATA
+async function loadDashboard(){
+
   try {
+
     const res = await fetch("/api/admin/dashboard", {
       headers: {
         Authorization: "Bearer " + token
@@ -63,16 +120,22 @@ async function load(){
     document.getElementById("users").innerText = d.users || 0;
     document.getElementById("dep").innerText = "₹" + (d.deposits || 0);
     document.getElementById("with").innerText = "₹" + (d.withdraws || 0);
-    document.getElementById("profit").innerText =
-      "₹" + ((d.deposits || 0) - (d.withdraws || 0));
+
+    const profit = (d.deposits || 0) - (d.withdraws || 0);
+    document.getElementById("profit").innerText = "₹" + profit;
 
   } catch (err) {
-    alert("Failed to load dashboard");
-    console.log(err);
+    console.log("Dashboard error:", err);
   }
+
 }
 
-load();
+// 🔄 AUTO REFRESH (REAL-TIME)
+setInterval(loadDashboard, 3000);
+
+// FIRST LOAD
+loadDashboard();
+
 </script>
 
 </body>
