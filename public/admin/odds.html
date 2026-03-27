@@ -1,89 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<title>Match Control</title>
+
+<style>
+body {
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  color:white;
+  padding:20px;
+}
+
+button {
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+</style>
 </head>
 
-<body onload="protect();applyRoleControl()">
+<body>
 
-<div class="sidebar">
-  <h2>SuperXbet</h2>
+<h2>🎮 Match Control</h2>
 
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
-
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
+<div>
+  <button onclick="send(1)">1</button>
+  <button onclick="send(2)">2</button>
+  <button onclick="send(4)">4</button>
+  <button onclick="send(6)">6</button>
+  <button onclick="send('wicket')">Wicket</button>
 </div>
 
-<div class="main">
-
-<h2>Live Match Control</h2>
-
-<div class="card">
-
-<input id="matchName" placeholder="Match Name"><br><br>
-
-<input id="teamA" placeholder="Team A"><br><br>
-<input id="teamB" placeholder="Team B"><br><br>
-
-<input id="score" placeholder="Score (120)"><br><br>
-<input id="wickets" placeholder="Wickets (3)"><br><br>
-<input id="overs" placeholder="Overs (14.2)"><br><br>
-<input id="target" placeholder="Target (180)"><br><br>
-
-<select id="innings">
-  <option value="1">1st Innings</option>
-  <option value="2">2nd Innings</option>
-</select>
-
-<br><br>
-
-<button onclick="updateMatch()">🚀 Update Score + Odds</button>
-
-<br><br>
-
-<div id="result"></div>
-
-</div>
-
-</div>
+<h3 id="score"></h3>
+<h3 id="odds"></h3>
 
 <script>
 
-async function updateMatch(){
+const token = localStorage.getItem("adminToken");
 
-const res = await fetch(API+"/admin/match/update-with-odds",{
-method:"POST",
-headers:authHeaders(),
-body: JSON.stringify({
-matchName: matchName.value,
-teamA: teamA.value,
-teamB: teamB.value,
-score: Number(score.value),
-wickets: Number(wickets.value),
-overs: Number(overs.value),
-target: Number(target.value),
-innings: Number(innings.value)
-})
-});
+async function send(action){
+  const res = await fetch("/api/admin/score/update",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({action})
+  });
 
-const data = await res.json();
+  const d = await res.json();
 
-result.innerHTML = `
-<h3>Odds Updated</h3>
-Team A: ${data.odds.teamA}<br>
-Team B: ${data.odds.teamB}
-`;
-
+  score.innerText = `Score: ${d.match.score}/${d.match.wickets}`;
+  odds.innerText = `Odds: ${d.odds.teamA} / ${d.odds.teamB}`;
 }
 
 </script>

@@ -5,9 +5,9 @@ import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
+/// 🔥 PLACE BET
 router.post("/place", verifyToken, async (req, res) => {
   try {
-    console.log("🔥 PLACE BET HIT");
 
     const userId = req.user.id;
     const { match, selection, selections, odds, stake } = req.body;
@@ -18,43 +18,44 @@ router.post("/place", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log("💰 BEFORE:", user.walletBalance);
-
     if (user.walletBalance < stake) {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    /// 🔥 WALLET DEDUCT
+    /// 💰 WALLET DEDUCT
     user.walletBalance -= stake;
     await user.save();
 
-    console.log("💰 AFTER:", user.walletBalance);
+    /// 🔥 TYPE DETECT
+    const isBuilder = selections && Object.keys(selections).length > 0;
 
     const bet = new Bet({
       userId,
       match,
-      selection,
-      selections: selections || null,
+      type: isBuilder ? "builder" : "single",
+      selection: isBuilder ? null : selection,
+      selections: isBuilder ? selections : null,
       odds,
       stake,
       potentialWin: stake * odds,
-      status: "pending",
+      status: "pending"
     });
 
     await bet.save();
 
     res.json({
       success: true,
-      walletBalance: user.walletBalance,
-      bet,
+      walletBalance: user.walletBalance
     });
 
   } catch (err) {
-    console.log("❌ ERROR:", err);
-    res.status(500).json({ error: "Server error" });
+    console.log(err);
+    res.status(500).json({ error: "Bet failed" });
   }
 });
 
+
+/// 📜 MY BETS
 router.get("/my", verifyToken, async (req, res) => {
   const bets = await Bet.find({ userId: req.user.id })
     .sort({ createdAt: -1 });

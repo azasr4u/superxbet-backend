@@ -1,55 +1,109 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<title>Users</title>
+
+<style>
+body {
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#36d1dc,#5b86e5);
+  color:white;
+  padding:20px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius:10px;
+}
+
+th,td { padding:12px; }
+
+button {
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  margin:2px;
+  color:white;
+  cursor:pointer;
+}
+
+.add { background:green; }
+.block { background:red; }
+</style>
 </head>
 
-<body onload="protect();applyRoleControl();loadUsersPage()">
+<body>
 
-<div class="sidebar">
-  <h2>SuperXbet</h2>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
+<h2>👤 Users</h2>
 
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
-</div>
-
-<div class="main">
-<h2>Users</h2>
-
-<div class="card">
 <table>
+<thead>
+<tr>
+<th>Phone</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+</thead>
+
 <tbody id="users"></tbody>
 </table>
-</div>
-
-</div>
 
 <script>
 
-async function loadUsersPage(){
+const token = localStorage.getItem("adminToken");
 
-const data = await loadUsers();
+async function load(){
+  const res = await fetch("/api/admin/users",{
+    headers:{Authorization:"Bearer "+token}
+  });
 
-users.innerHTML = data.map(u=>`
-<tr>
-<td>${u.phone}</td>
-<td>₹${u.walletBalance}</td>
-<td>
-<button class="admin-only" onclick="deleteUser('${u._id}')">Delete</button>
-</td>
-</tr>`).join("");
+  const data = await res.json();
+  const table = document.getElementById("users");
+  table.innerHTML = "";
 
+  data.forEach(u=>{
+    table.innerHTML += `
+    <tr>
+      <td>${u.phone}</td>
+      <td>₹${u.walletBalance}</td>
+      <td>
+        <button class="add" onclick="bonus('${u._id}')">+Bonus</button>
+        <button class="block" onclick="block('${u._id}')">Block</button>
+      </td>
+    </tr>`;
+  });
 }
+
+async function bonus(id){
+  const amount = prompt("Enter amount");
+  if(!amount) return;
+
+  await fetch("/api/admin/bonus",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({userId:id,amount})
+  });
+
+  load();
+}
+
+async function block(id){
+  await fetch("/api/admin/user/block/"+id,{
+    method:"POST",
+    headers:{Authorization:"Bearer "+token}
+  });
+
+  load();
+}
+
+load();
+
 </script>
 
 </body>

@@ -1,104 +1,62 @@
-import express from "express";
-import Score from "../models/Score.js";
+export function calculateOdds(match) {
 
-const router = express.Router();
+  const { score, overs, wickets, target, innings } = match;
 
-/// 🔥 IPL TEAMS (FIXED)
-const teams = [
-  "MI", "CSK", "RCB", "KKR", "GT",
-  "SRH", "DC", "RR", "PBKS", "LSG",
-];
+  let teamA = 1.9;
+  let teamB = 1.9;
 
-/// 🔥 SAFE RANDOM MATCH (NO MUTATION)
-function getRandomMatch() {
-  const shuffled = [...teams].sort(() => 0.5 - Math.random());
-  return {
-    teamA: shuffled[0],
-    teamB: shuffled[1],
-  };
-}
+  /// 🟢 FIRST INNINGS (BALANCED)
+  if (innings === 1) {
 
-/// 🔥 CORE ODDS ENGINE
-function calculateOdds(score) {
-
-  let oddsA = 1.9;
-  let oddsB = 1.9;
-
-  if (!score) return { oddsA, oddsB };
-
-  /// 🎯 MATCH SITUATION LOGIC
-
-  // High score advantage
-  if (score.totalRuns > 180) {
-    oddsA = 1.5;
-    oddsB = 2.5;
-  }
-
-  // Low score = balanced
-  if (score.totalRuns < 140) {
-    oddsA = 2.1;
-    oddsB = 1.8;
-  }
-
-  // Wickets pressure
-  if (score.wickets >= 5) {
-    oddsA += 0.3;
-    oddsB -= 0.2;
-  }
-
-  // Powerplay impact
-  if (score.powerplayRuns > 60) {
-    oddsA -= 0.2;
-    oddsB += 0.2;
-  }
-
-  // Clamp values
-  oddsA = Math.max(1.2, oddsA);
-  oddsB = Math.max(1.2, oddsB);
-
-  return {
-    oddsA: Number(oddsA.toFixed(2)),
-    oddsB: Number(oddsB.toFixed(2)),
-  };
-}
-
-/// ================= LIVE ODDS =================
-router.get("/live-odds", async (req, res) => {
-
-  try {
-
-    const score = await Score.findOne();
-
-    let match;
-
-    if (score && score.match) {
-      const [teamA, teamB] = score.match.split(" vs ");
-      match = { teamA, teamB };
-    } else {
-      match = getRandomMatch();
+    if (score > 180) {
+      teamA = 1.6;
+      teamB = 2.4;
     }
 
-    const { oddsA, oddsB } = calculateOdds(score);
+    if (score < 140) {
+      teamA = 2.2;
+      teamB = 1.7;
+    }
 
-    res.json({
-      matchId: "IPL_" + Date.now(),
-      league: "IPL",
-
-      teamA: match.teamA,
-      teamB: match.teamB,
-
-      oddsA,
-      oddsB,
-
-      score: score || null,
-
-      status: "LIVE",
-      lastUpdate: new Date()
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-});
 
-export default router;
+  /// 🔴 SECOND INNINGS (REAL CALCULATION)
+  else {
+
+    const ballsPlayed = overs * 6;
+    const ballsLeft = 120 - ballsPlayed;
+
+    const runsNeeded = target - score;
+    const requiredRR = runsNeeded / (ballsLeft / 6);
+    const currentRR = score / overs;
+
+    let strength = currentRR - requiredRR;
+
+    /// wickets pressure
+    if (wickets >= 5) strength -= 1;
+    if (wickets >= 8) strength -= 2;
+
+    /// death overs pressure
+    if (overs > 16) {
+      if (requiredRR > 10) strength -= 1.5;
+      else strength += 0.5;
+    }
+
+    /// powerplay boost
+    if (overs < 6 && wickets <= 1) {
+      strength += 0.5;
+    }
+
+    teamA = 1.9 - strength * 0.25;
+    teamB = 1.9 + strength * 0.25;
+  }
+
+  /// 🔒 CLAMP VALUES
+  teamA = Math.max(1.2, Math.min(5, teamA));
+  teamB = Math.max(1.2, Math.min(5, teamB));
+
+  return {
+    teamA: Number(teamA.toFixed(2)),
+    teamB: Number(teamB.toFixed(2))
+  };
+}

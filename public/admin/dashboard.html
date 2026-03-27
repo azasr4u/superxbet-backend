@@ -1,47 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<title>Dashboard</title>
+
+<style>
+body {
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  color:white;
+  padding:20px;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+
+.card {
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  padding:20px;
+  border-radius:15px;
+}
+
+.value {
+  font-size:26px;
+  font-weight:bold;
+}
+</style>
 </head>
 
-<body onload="protect();applyRoleControl();loadDash()">
+<body>
 
-<div class="sidebar">
-  <h2>SuperXbet</h2>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
+<h2>📊 Dashboard</h2>
 
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
-</div>
-
-<div class="main">
-<h2>Dashboard</h2>
-
-<div class="card" id="dash"></div>
-
-<button onclick="logout()">Logout</button>
+<div class="grid">
+  <div class="card"><div>Users</div><div id="users" class="value"></div></div>
+  <div class="card"><div>Deposits</div><div id="dep" class="value"></div></div>
+  <div class="card"><div>Withdraws</div><div id="withdraw" class="value"></div></div>
+  <div class="card"><div>Profit</div><div id="profit" class="value"></div></div>
 </div>
 
 <script>
-async function loadDash(){
-  const res = await fetch(API+"/admin/dashboard",{headers:authHeaders()});
+const token = localStorage.getItem("adminToken");
+
+async function load(){
+  const res = await fetch("/api/admin/dashboard",{headers:{Authorization:"Bearer "+token}});
   const d = await res.json();
 
-  dash.innerHTML = `
-    Users: ${d.users}<br>
-    Deposits: ₹${d.deposits}<br>
-    Withdraws: ₹${d.withdraws}
-  `;
+  users.innerText = d.users;
+  dep.innerText = "₹"+d.deposits;
+  withdraw.innerText = "₹"+d.withdraws;
+  profit.innerText = "₹"+(d.deposits-d.withdraws);
 }
+load();
 </script>
 
 </body>

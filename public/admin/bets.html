@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bets</title>
+
+<style>
+body {
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#43cea2,#185a9d);
+  color:white;
+  padding:20px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius:10px;
+}
+
+th,td { padding:12px; }
+
+button {
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  color:white;
+}
+
+.win { background:green; }
+.loss { background:red; }
+.void { background:gray; }
+</style>
+</head>
+
+<body>
+
+<h2>🎯 Bets</h2>
+
+<table>
+<thead>
+<tr>
+<th>User</th>
+<th>Match</th>
+<th>Type</th>
+<th>Selection</th>
+<th>Stake</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="table"></tbody>
+</table>
+
+<script>
+
+const token = localStorage.getItem("adminToken");
+
+async function load(){
+  const res = await fetch("/api/admin/bets", {
+    headers:{Authorization:"Bearer "+token}
+  });
+
+  const data = await res.json();
+  const table = document.getElementById("table");
+  table.innerHTML = "";
+
+  data.forEach(b=>{
+
+    let sel = b.type==="single"
+      ? b.selection
+      : Object.entries(b.selections||{}).map(([k,v])=>k+":"+v).join("<br>");
+
+    table.innerHTML += `
+    <tr>
+      <td>${b.userId?.phone}</td>
+      <td>${b.match}</td>
+      <td>${b.type}</td>
+      <td>${sel}</td>
+      <td>₹${b.stake}</td>
+      <td>${b.status}</td>
+      <td>
+        ${b.status==="pending" ? `
+          <button class="win" onclick="set('${b._id}','won')">WIN</button>
+          <button class="loss" onclick="set('${b._id}','lost')">LOSS</button>
+          <button class="void" onclick="set('${b._id}','void')">VOID</button>
+        ` : "Done"}
+      </td>
+    </tr>`;
+  });
+}
+
+async function set(id,result){
+  await fetch("/api/admin/bet/settle",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({ betId:id,result })
+  });
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>

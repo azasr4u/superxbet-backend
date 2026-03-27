@@ -1,38 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
+<title>Withdraws</title>
+
+<style>
+body {
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#ff7e5f,#feb47b);
+  color:white;
+  padding:20px;
+}
+
+table {
+  width:100%;
+  background: rgba(255,255,255,0.1);
+}
+
+th,td { padding:12px; }
+
+button {
+  background:red;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  color:white;
+}
+</style>
 </head>
 
 <body>
 
-<div class="sidebar">
-  <h2>SuperXbet</h2>
-
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
-
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
-</div>
-
-<div class="main">
-
-<div class="topbar">
-  <input placeholder="Search...">
-  <div>Admin</div>
-</div>
-
-<h2>Withdraws</h2>
-
-<div class="box">
+<h2>💸 Withdraws</h2>
 
 <table>
 <thead>
@@ -43,33 +41,44 @@
 <th>Action</th>
 </tr>
 </thead>
-<tbody id="data"></tbody>
+
+<tbody id="table"></tbody>
 </table>
-
-</div>
-
-</div>
 
 <script>
 
+const token = localStorage.getItem("adminToken");
+
 async function load(){
+  const res = await fetch("/api/admin/withdraws",{
+    headers:{Authorization:"Bearer "+token}
+  });
 
-const res = await fetch("/api/admin/withdraws");
-const data = await res.json();
+  const data = await res.json();
+  const table = document.getElementById("table");
+  table.innerHTML="";
 
-data.map(w=>{
-document.getElementById("data").innerHTML += `
-<tr>
-<td>${w.userId?.phone}</td>
-<td>₹${w.amount}</td>
-<td>${w.status}</td>
-<td>
-<button class="btn-green" onclick="approve('${w._id}')">Approve</button>
-</td>
-</tr>
-`;
-});
+  data.forEach(w=>{
+    table.innerHTML += `
+    <tr>
+      <td>${w.userId?.phone}</td>
+      <td>₹${w.amount}</td>
+      <td>${w.status}</td>
+      <td>
+        ${w.status==="Pending" ? 
+        `<button onclick="approve('${w._id}')">Approve</button>` 
+        : "Done"}
+      </td>
+    </tr>`;
+  });
+}
 
+async function approve(id){
+  await fetch("/api/admin/withdraw/approve/"+id,{
+    method:"POST",
+    headers:{Authorization:"Bearer "+token}
+  });
+  load();
 }
 
 load();

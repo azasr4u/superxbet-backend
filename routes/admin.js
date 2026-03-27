@@ -12,6 +12,9 @@ import LiveOdds from "../models/LiveOdds.js";
 import Match from "../models/Match.js";
 import Bet from "../models/Bet.js";
 
+import { updateScore } from "../services/scoreEngine.js";
+import { calculateOdds } from "../services/oddsEngine.js";
+
 const router = express.Router();
 const SECRET = "superxbet_secret";
 
@@ -159,50 +162,7 @@ router.post("/withdraw/approve/:id", verifyToken, adminOrAgent, async (req, res)
 });
 
 
-/// ================= ADVANCED ODDS ENGINE =================
-function calculateOdds(match) {
-
-  const { score, overs, wickets, target, innings } = match;
-
-  if (innings === 1) {
-    return { teamA: 1.95, teamB: 1.95 };
-  }
-
-  const ballsPlayed = Math.floor(overs) * 6 + (overs % 1) * 10;
-  const ballsLeft = 120 - ballsPlayed;
-
-  const runsNeeded = target - score;
-  const requiredRR = runsNeeded / (ballsLeft / 6);
-  const currentRR = score / overs;
-
-  let strength = currentRR - requiredRR;
-
-  if (wickets >= 5) strength -= 1;
-  if (wickets >= 8) strength -= 2;
-
-  if (overs > 16) {
-    if (requiredRR > 10) strength -= 1.5;
-    else strength += 0.5;
-  }
-
-  if (overs < 6 && wickets <= 1) {
-    strength += 0.5;
-  }
-
-  let teamA = 1.9 - strength * 0.25;
-  let teamB = 1.9 + strength * 0.25;
-
-  teamA += 0.05;
-  teamB += 0.05;
-
-  return {
-    teamA: Number(Math.max(1.2, Math.min(5, teamA)).toFixed(2)),
-    teamB: Number(Math.max(1.2, Math.min(5, teamB)).toFixed(2))
-  };
-}
-
-
-/// ================= SCORE + ODDS =================
+/// ================= MATCH + ODDS =================
 router.post("/match/update-with-odds",
   verifyToken,
   adminOrAgent,
@@ -241,34 +201,61 @@ router.post("/match/result",
   adminOnly,
   async (req, res) => {
 
-  const { winner } = req.body; // "A" or "B"
+  try {
 
-  const live = await LiveOdds.findOne();
+    const { winner } = req.body;
 
-  if (!live) return res.status(400).json({ error: "No match" });
-
-  const bets = await Bet.find({
-    match: live.match,
-    status: "pending"
-  });
-
-  for (let bet of bets) {
-
-    const user = await User.findById(bet.userId);
-
-    if (bet.team === winner) {
-      const winAmount = bet.amount * bet.odds;
-      user.walletBalance += winAmount;
-      bet.status = "won";
-    } else {
-      bet.status = "lost";
+    const match = await Match.findOne();
+    if (!match) {
+      return res.status(400).json({ error: "No match found" });
     }
 
-    await user.save();
-    await bet.save();
-  }
+    /// 🔒 PREVENT DOUBLE RESULT
+    if (match.result) {
+      return res.status(400).json({ error: "Result already declared" });
+    }
 
-  res.json({ message: "All bets settled" });
+    /// SAVE RESULT
+    match.result = winner;
+    match.isLive = false;
+    await match.save();
+
+    /// GET BETS
+    const bets = await Bet.find({
+      match: match.matchName,
+      status: "pending",
+      settled: false
+    });
+
+    for (let bet of bets) {
+
+      const user = await User.findById(bet.userId);
+
+      /// SINGLE BET ONLY
+      if (bet.type === "single") {
+
+        if (bet.selection === winner) {
+          user.walletBalance += bet.potentialWin;
+          bet.status = "won";
+        } else {
+          bet.status = "lost";
+        }
+
+        bet.settled = true;
+      }
+
+      await user.save();
+      await bet.save();
+    }
+
+    res.json({
+      message: "Match settled successfully"
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Settlement failed" });
+  }
 });
 
 
@@ -283,6 +270,82 @@ router.get("/match", async (req, res) => {
 router.get("/live-odds", async (req, res) => {
   const data = await LiveOdds.findOne();
   res.json(data);
+});
+
+
+/// ================= BET MANAGEMENT =================
+router.get("/bets", verifyToken, adminOrAgent, async (req, res) => {
+
+  const bets = await Bet.find()
+    .populate("userId", "phone walletBalance")
+    .sort({ createdAt: -1 });
+
+  res.json(bets);
+});
+
+
+/// ================= MANUAL SETTLEMENT =================
+router.post("/bet/settle", verifyToken, adminOnly, async (req, res) => {
+
+  const { betId, result } = req.body;
+
+  const bet = await Bet.findById(betId);
+
+  if (!bet) {
+    return res.status(404).json({ error: "Bet not found" });
+  }
+
+  if (bet.settled) {
+    return res.status(400).json({ error: "Already settled" });
+  }
+
+  const user = await User.findById(bet.userId);
+
+  if (result === "won") {
+    user.walletBalance += bet.potentialWin;
+    bet.status = "won";
+  }
+  else if (result === "lost") {
+    bet.status = "lost";
+  }
+  else if (result === "void") {
+    user.walletBalance += bet.stake;
+    bet.status = "void";
+  }
+
+  bet.settled = true;
+  bet.result = result;
+
+  await user.save();
+  await bet.save();
+
+  res.json({ success: true });
+});
+
+
+/// ================= SCORE ENGINE =================
+router.post("/score/update", verifyToken, adminOrAgent, async (req, res) => {
+
+  const { action } = req.body;
+
+  let match = await Match.findOne();
+
+  if (!match) {
+    match = new Match({ matchName: "Live Match" });
+  }
+
+  match = updateScore(match, action);
+  await match.save();
+
+  const odds = calculateOdds(match);
+
+  await LiveOdds.findOneAndUpdate(
+    {},
+    { match: match.matchName, odds },
+    { upsert: true }
+  );
+
+  res.json({ match, odds });
 });
 
 export default router;

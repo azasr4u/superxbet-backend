@@ -9,27 +9,46 @@ const betSchema = new mongoose.Schema({
 
   match: String,
 
-  /// ✅ SINGLE BET (MAIN FIX)
-  selection: {
+  /// 🔥 TYPE
+  type: {
     type: String,
+    enum: ["single", "builder"],
     required: true
   },
 
-  odds: Number,
-  stake: Number,
+  /// 🔹 SINGLE BET
+  selection: {
+    type: String,
+    default: null
+  },
 
-  potentialWin: Number,
-
-  /// 🔥 OPTIONAL (FUTURE BUILDER SUPPORT)
+  /// 🔹 BUILDER BET
   selections: {
     type: Object,
     default: null
   },
 
+  odds: Number,
+  stake: Number,
+  potentialWin: Number,
+
+  /// 🔥 STATUS
   status: {
     type: String,
-    enum: ["pending", "won", "lost"],
+    enum: ["pending", "won", "lost", "void"],
     default: "pending"
+  },
+
+  /// 🔥 RESULT SOURCE
+  result: {
+    type: String,
+    default: null
+  },
+
+  /// 🔒 LOCK (prevents double settlement)
+  settled: {
+    type: Boolean,
+    default: false
   }
 
 }, { timestamps: true });

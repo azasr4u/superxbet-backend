@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
+<title>Deposits</title>
+
+<style>
+body {
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#11998e,#38ef7d);
+  color:white;
+  padding:20px;
+}
+
+table {
+  width:100%;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+}
+
+th,td { padding:12px; }
+
+button {
+  background:green;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  color:white;
+}
+</style>
 </head>
 
 <body>
 
-<div class="sidebar">
-  <h2>SuperXbet</h2>
-
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
-
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
-</div>
-
-<div class="main">
-
-<div class="header">
-  <h1>Deposits</h1>
-</div>
-
-<div class="card">
+<h2>🏦 Deposits</h2>
 
 <table>
 <thead>
@@ -41,32 +43,43 @@
 </tr>
 </thead>
 
-<tbody id="data"></tbody>
-
+<tbody id="table"></tbody>
 </table>
-
-</div>
-
-</div>
 
 <script>
 
+const token = localStorage.getItem("adminToken");
+
 async function load(){
+  const res = await fetch("/api/admin/deposits",{
+    headers:{Authorization:"Bearer "+token}
+  });
 
-const res = await fetch("/api/admin/deposits");
-const data = await res.json();
+  const data = await res.json();
+  const table = document.getElementById("table");
+  table.innerHTML="";
 
-document.getElementById("data").innerHTML = data.map(d=>`
-<tr>
-<td>${d.userId?.phone}</td>
-<td>₹${d.amount}</td>
-<td>${d.status}</td>
-<td>
-<button class="btn primary" onclick="approve('${d._id}')">Approve</button>
-</td>
-</tr>
-`).join("");
+  data.forEach(d=>{
+    table.innerHTML += `
+    <tr>
+      <td>${d.userId?.phone}</td>
+      <td>₹${d.amount}</td>
+      <td>${d.status}</td>
+      <td>
+        ${d.status==="Pending" ? 
+        `<button onclick="approve('${d._id}')">Approve</button>` 
+        : "Done"}
+      </td>
+    </tr>`;
+  });
+}
 
+async function approve(id){
+  await fetch("/api/admin/deposit/approve/"+id,{
+    method:"POST",
+    headers:{Authorization:"Bearer "+token}
+  });
+  load();
 }
 
 load();
