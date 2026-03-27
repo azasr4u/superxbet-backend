@@ -12,6 +12,9 @@ import depositRoutes from "./routes/deposit.js";
 import withdrawRoutes from "./routes/withdraw.js";
 import settingsRoutes from "./routes/settings.js";
 import betRoutes from "./routes/bet.js";
+import oddsRoutes from "./routes/odds.js";
+
+
 
 
 
@@ -44,6 +47,7 @@ app.use("/api/deposit", depositRoutes);
 app.use("/api/withdraw", withdrawRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/bet", betRoutes);
+app.use("/api/odds", oddsRoutes);
 
 // ✅ TEST
 app.get("/", (req, res) => {
