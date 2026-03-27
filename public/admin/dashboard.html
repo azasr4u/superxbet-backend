@@ -2,20 +2,66 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
+<title>Admin Dashboard</title>
 
 <style>
 body {
   margin:0;
   font-family:Segoe UI;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  color:white;
+  display:flex;
+  background:#f4f6fb;
 }
 
+/* SIDEBAR */
+.sidebar {
+  width:230px;
+  height:100vh;
+  background: linear-gradient(180deg,#667eea,#764ba2);
+  color:white;
+  padding:20px;
+  position:fixed;
+}
+
+.sidebar h2 {
+  margin-bottom:30px;
+}
+
+.menu {
+  margin-top:20px;
+}
+
+.menu a {
+  display:block;
+  padding:12px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
+  border-radius:8px;
+  transition:0.3s;
+}
+
+.menu a:hover {
+  background:rgba(255,255,255,0.2);
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
+
+/* MAIN */
+.main {
+  margin-left:230px;
+  width:100%;
+}
+
+/* TOPBAR */
 .topbar {
   display:flex;
   justify-content:space-between;
+  align-items:center;
   padding:20px;
+  background:white;
+  box-shadow:0 2px 10px rgba(0,0,0,0.05);
 }
 
 .logout {
@@ -27,6 +73,7 @@ body {
   cursor:pointer;
 }
 
+/* CONTENT */
 .container {
   padding:20px;
 }
@@ -38,14 +85,15 @@ body {
 }
 
 .card {
-  background:rgba(255,255,255,0.2);
-  backdrop-filter:blur(10px);
+  background:white;
   padding:20px;
   border-radius:12px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.05);
 }
 
 .title {
   font-size:14px;
+  color:#888;
 }
 
 .value {
@@ -58,45 +106,63 @@ body {
 
 <body>
 
-<div class="topbar">
-  <h2>📊 Admin Dashboard</h2>
-  <button class="logout" onclick="logout()">Logout</button>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+
+  <div class="menu">
+    <a class="active">Dashboard</a>
+    <a href="/admin/users.html">Users</a>
+    <a href="/admin/deposits.html">Deposits</a>
+    <a href="/admin/withdraws.html">Withdraws</a>
+    <a href="/admin/bets.html">Bets</a>
+    <a href="/admin/odds.html">Match Control</a>
+  </div>
 </div>
 
-<div class="container">
+<!-- MAIN -->
+<div class="main">
 
-  <div class="grid">
-    <div class="card">
-      <div class="title">Users</div>
-      <div id="users" class="value">0</div>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <h2>📊 Dashboard</h2>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+
+    <div class="grid">
+      <div class="card">
+        <div class="title">Users</div>
+        <div id="users" class="value">0</div>
+      </div>
+
+      <div class="card">
+        <div class="title">Deposits</div>
+        <div id="dep" class="value">₹0</div>
+      </div>
+
+      <div class="card">
+        <div class="title">Withdraws</div>
+        <div id="with" class="value">₹0</div>
+      </div>
+
+      <div class="card">
+        <div class="title">Profit</div>
+        <div id="profit" class="value">₹0</div>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="title">Deposits</div>
-      <div id="dep" class="value">₹0</div>
-    </div>
-
-    <div class="card">
-      <div class="title">Withdraws</div>
-      <div id="with" class="value">₹0</div>
-    </div>
-
-    <div class="card">
-      <div class="title">Profit</div>
-      <div id="profit" class="value">₹0</div>
-    </div>
   </div>
 
 </div>
 
 <script>
 
-// 🔒 AUTH PROTECT
+// 🔒 AUTH
 const token = localStorage.getItem("adminToken");
-
-if (!token) {
-  window.location.href = "/admin/login.html";
-}
+if (!token) window.location.href = "/admin/login.html";
 
 // 🚪 LOGOUT
 function logout(){
@@ -104,15 +170,11 @@ function logout(){
   window.location.href = "/admin/login.html";
 }
 
-// 📊 LOAD DASHBOARD DATA
+// 📊 LOAD DATA
 async function loadDashboard(){
-
   try {
-
     const res = await fetch("/api/admin/dashboard", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
+      headers: { Authorization: "Bearer " + token }
     });
 
     const d = await res.json();
@@ -125,15 +187,11 @@ async function loadDashboard(){
     document.getElementById("profit").innerText = "₹" + profit;
 
   } catch (err) {
-    console.log("Dashboard error:", err);
+    console.log(err);
   }
-
 }
 
-// 🔄 AUTO REFRESH (REAL-TIME)
 setInterval(loadDashboard, 3000);
-
-// FIRST LOAD
 loadDashboard();
 
 </script>
