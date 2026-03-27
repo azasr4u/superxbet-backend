@@ -48,7 +48,7 @@ body {
 .main {
   margin-left:240px;
   width:100%;
-  padding:20px;
+  padding:40px;
 }
 
 /* TOPBAR */
@@ -56,7 +56,7 @@ body {
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:20px;
+  margin-bottom:40px;
 }
 
 .logout {
@@ -69,29 +69,36 @@ body {
   font-weight:bold;
 }
 
-/* GRID */
+/* GRID (2x2 PERFECT) */
 .grid {
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:20px;
+  grid-template-columns:repeat(2,1fr);
+  gap:25px;
+  max-width:800px;
 }
 
-/* CARDS (GLASS EFFECT) */
+/* CARD */
 .card {
   padding:25px;
   border-radius:15px;
   background: rgba(255,255,255,0.15);
   backdrop-filter: blur(12px);
   box-shadow:0 10px 25px rgba(0,0,0,0.2);
+  transition:0.3s;
 }
 
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* TEXT */
 .title {
   font-size:14px;
   opacity:0.8;
 }
 
 .value {
-  font-size:30px;
+  font-size:32px;
   font-weight:bold;
   margin-top:10px;
 }
@@ -99,7 +106,7 @@ body {
 /* RESPONSIVE */
 @media(max-width:900px){
   .grid{
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:1fr;
   }
 }
 </style>
@@ -124,13 +131,11 @@ body {
 <!-- MAIN -->
 <div class="main">
 
-  <!-- TOP -->
   <div class="topbar">
     <h2>📊 Admin Dashboard</h2>
     <button class="logout" onclick="logout()">Logout</button>
   </div>
 
-  <!-- CARDS -->
   <div class="grid">
     <div class="card">
       <div class="title">Users</div>
@@ -156,35 +161,38 @@ body {
 </div>
 
 <script>
-
-// AUTH
 const token = localStorage.getItem("adminToken");
-if (!token) window.location.href = "/admin/login.html";
 
-// LOGOUT
+if (!token) {
+  window.location.href = "/admin/login.html";
+}
+
 function logout(){
   localStorage.removeItem("adminToken");
   window.location.href = "/admin/login.html";
 }
 
-// LOAD DATA
 async function loadDashboard(){
-  const res = await fetch("/api/admin/dashboard", {
-    headers: { Authorization: "Bearer " + token }
-  });
+  try {
+    const res = await fetch("/api/admin/dashboard", {
+      headers: { Authorization: "Bearer " + token }
+    });
 
-  const d = await res.json();
+    const d = await res.json();
 
-  document.getElementById("users").innerText = d.users || 0;
-  document.getElementById("dep").innerText = "₹" + (d.deposits || 0);
-  document.getElementById("with").innerText = "₹" + (d.withdraws || 0);
-  document.getElementById("profit").innerText =
-    "₹" + ((d.deposits || 0) - (d.withdraws || 0));
+    document.getElementById("users").innerText = d.users || 0;
+    document.getElementById("dep").innerText = "₹" + (d.deposits || 0);
+    document.getElementById("with").innerText = "₹" + (d.withdraws || 0);
+    document.getElementById("profit").innerText =
+      "₹" + ((d.deposits || 0) - (d.withdraws || 0));
+
+  } catch (err) {
+    console.log(err);
+  }
 }
 
-setInterval(loadDashboard,3000);
+setInterval(loadDashboard, 3000);
 loadDashboard();
-
 </script>
 
 </body>
