@@ -5,59 +5,61 @@ import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-/// 🔥 PLACE MARKET BET (FINAL FIXED)
-router.post("/market", verifyToken, async (req, res) => {
+router.post("/place", verifyToken, async (req, res) => {
   try {
-    const { type, selection, odds, stake } = req.body;
+    console.log("🔥 PLACE BET HIT");
 
-    const user = await User.findById(req.user.id);
+    const userId = req.user.id;
+    const { match, selection, selections, odds, stake } = req.body;
+
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.json({ success: false, message: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    /// ✅ CHECK BALANCE
-    if ((user.walletBalance || 0) < stake) {
-      return res.json({ success: false, message: "Insufficient balance" });
+    console.log("💰 BEFORE:", user.walletBalance);
+
+    if (user.walletBalance < stake) {
+      return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    /// ✅ DEDUCT WALLET
+    /// 🔥 WALLET DEDUCT
     user.walletBalance -= stake;
     await user.save();
 
-    /// ✅ SAVE BET
+    console.log("💰 AFTER:", user.walletBalance);
+
     const bet = new Bet({
-      userId: user._id,
-      type,
+      userId,
+      match,
       selection,
+      selections: selections || null,
       odds,
       stake,
+      potentialWin: stake * odds,
       status: "pending",
-      createdAt: new Date()
     });
 
     await bet.save();
 
     res.json({
       success: true,
-      message: "Bet placed",
-      newBalance: user.walletBalance
+      walletBalance: user.walletBalance,
+      bet,
     });
 
   } catch (err) {
-    console.log(err);
-    res.json({ success: false, message: "Server error" });
+    console.log("❌ ERROR:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-/// 🔥 GET MY BETS
 router.get("/my", verifyToken, async (req, res) => {
-  try {
-    const bets = await Bet.find({ userId: req.user.id }).sort({ createdAt: -1 });
-    res.json(bets);
-  } catch {
-    res.json([]);
-  }
+  const bets = await Bet.find({ userId: req.user.id })
+    .sort({ createdAt: -1 });
+
+  res.json(bets);
 });
 
 export default router;
