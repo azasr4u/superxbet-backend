@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Login</title>
+
+<style>
+body {
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: linear-gradient(135deg,#6a11cb,#2575fc);
+}
+
+.card {
+  background:#ffffff;
+  padding:35px;
+  border-radius:14px;
+  width:320px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+  text-align:center;
+}
+
+h2 {
+  margin-bottom:20px;
+  color:#333;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:14px;
+}
+
+input:focus {
+  outline:none;
+  border-color:#6a11cb;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(135deg,#43cea2,#185a9d);
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:10px;
+  transition:0.3s;
+}
+
+button:hover {
+  transform:translateY(-2px);
+  opacity:0.9;
+}
+
+.error {
+  color:red;
+  font-size:13px;
+  margin-top:8px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="card">
+  <h2>Admin Login</h2>
+
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+
+  <div id="error" class="error"></div>
+</div>
+
+<script>
+async function login(){
+
+  const username = document.getElementById("user").value;
+  const password = document.getElementById("pass").value;
+
+  const errorBox = document.getElementById("error");
+  errorBox.innerText = "";
+
+  try {
+
+    const res = await fetch("/api/admin/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if(data.token){
+      localStorage.setItem("adminToken", data.token);
+
+      // redirect
+      window.location.href = "/admin/dashboard.html";
+
+    } else {
+      errorBox.innerText = "Invalid credentials";
+    }
+
+  } catch(err){
+    errorBox.innerText = "Server error";
+    console.log(err);
+  }
+
+}
+</script>
+
+</body>
+</html>

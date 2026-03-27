@@ -45,15 +45,33 @@ body {
 <script>
 const token = localStorage.getItem("adminToken");
 
-async function load(){
-  const res = await fetch("/api/admin/dashboard",{headers:{Authorization:"Bearer "+token}});
-  const d = await res.json();
-
-  users.innerText = d.users;
-  dep.innerText = "₹"+d.deposits;
-  withdraw.innerText = "₹"+d.withdraws;
-  profit.innerText = "₹"+(d.deposits-d.withdraws);
+// 🔒 Protect page
+if (!token) {
+  window.location.href = "/admin/login.html";
 }
+
+async function load(){
+  try {
+    const res = await fetch("/api/admin/dashboard", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const d = await res.json();
+
+    document.getElementById("users").innerText = d.users || 0;
+    document.getElementById("dep").innerText = "₹" + (d.deposits || 0);
+    document.getElementById("with").innerText = "₹" + (d.withdraws || 0);
+    document.getElementById("profit").innerText =
+      "₹" + ((d.deposits || 0) - (d.withdraws || 0));
+
+  } catch (err) {
+    alert("Failed to load dashboard");
+    console.log(err);
+  }
+}
+
 load();
 </script>
 
