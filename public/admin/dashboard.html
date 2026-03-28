@@ -19,65 +19,80 @@ body {
   height:100vh;
   background: linear-gradient(180deg,#5f2c82,#49a09d);
   padding:20px;
-  position:fixed;
 }
+
+.sidebar h2 { margin-bottom:30px; }
 
 .menu a {
   display:block;
-  padding:14px;
+  padding:12px;
   margin-bottom:10px;
   color:white;
   text-decoration:none;
   border-radius:10px;
 }
 
-.active {
-  background:rgba(255,255,255,0.3);
-}
+.active { background:rgba(255,255,255,0.3); }
 
 /* MAIN */
 .main {
-  margin-left:240px;
-  width:100%;
-  padding:40px;
+  flex:1;
+  padding:30px;
 }
 
-/* GRID */
+/* TOPBAR */
+.topbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:25px;
+}
+
+.logout {
+  padding:8px 16px;
+  border:none;
+  border-radius:8px;
+  background:#ff7e5f;
+  color:white;
+  cursor:pointer;
+}
+
+/* CARDS */
 .grid {
   display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:25px;
-  max-width:800px;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+  margin-bottom:25px;
 }
 
-/* CARD */
 .card {
-  padding:25px;
-  border-radius:15px;
-  background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(12px);
+  padding:20px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.15);
 }
 
 .value {
-  font-size:28px;
+  font-size:26px;
   font-weight:bold;
 }
 
 /* TABLE */
 table {
   width:100%;
-  margin-top:40px;
   border-collapse:collapse;
   background:rgba(255,255,255,0.1);
 }
 
 th, td {
-  padding:12px;
+  padding:10px;
   text-align:center;
 }
 
-th {
-  background:rgba(0,0,0,0.2);
+th { background:rgba(0,0,0,0.2); }
+
+/* SECTION */
+.section {
+  margin-top:30px;
 }
 </style>
 </head>
@@ -92,92 +107,163 @@ th {
     <a href="/admin/deposits.html">Deposits</a>
     <a href="/admin/withdraws.html">Withdraws</a>
     <a href="/admin/bets.html">Bets</a>
-    <a href="/admin/odds.html">Match Control</a>
+    <a href="/admin/score.html">Score Panel</a>
+    <a href="/admin/agents.html">Agents</a>
   </div>
 </div>
 
 <div class="main">
 
+<div class="topbar">
   <h2>📊 Admin Dashboard</h2>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
 
-  <div class="grid">
-    <div class="card">
-      <div>Users</div>
-      <div id="users" class="value">0</div>
-    </div>
-
-    <div class="card">
-      <div>Deposits</div>
-      <div id="dep" class="value">₹0</div>
-    </div>
-
-    <div class="card">
-      <div>Withdraws</div>
-      <div id="with" class="value">₹0</div>
-    </div>
-
-    <div class="card">
-      <div>Profit</div>
-      <div id="profit" class="value">₹0</div>
-    </div>
+<!-- 🔥 STATS -->
+<div class="grid">
+  <div class="card">
+    Users
+    <div id="users" class="value">0</div>
   </div>
 
-  <!-- 🔥 USER DETAILS TABLE -->
+  <div class="card">
+    Deposits
+    <div id="dep" class="value">₹0</div>
+  </div>
+
+  <div class="card">
+    Withdraws
+    <div id="with" class="value">₹0</div>
+  </div>
+
+  <div class="card">
+    Profit
+    <div id="profit" class="value">₹0</div>
+  </div>
+</div>
+
+<!-- 🔥 USER TABLE -->
+<div class="section">
+  <h3>👤 Users</h3>
+
   <table>
     <thead>
       <tr>
         <th>Phone</th>
         <th>Wallet</th>
-        <th>Wager Left</th>
         <th>Bonus</th>
+        <th>Wager</th>
+        <th>Role</th>
       </tr>
     </thead>
-    <tbody id="userTable"></tbody>
+    <tbody id="usersTable"></tbody>
   </table>
+</div>
+
+<!-- 🔥 RECENT DEPOSITS -->
+<div class="section">
+  <h3>💰 Recent Deposits</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Amount</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="depositsTable"></tbody>
+  </table>
+</div>
+
+<!-- 🔥 RECENT WITHDRAW -->
+<div class="section">
+  <h3>🏧 Recent Withdraws</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Amount</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="withdrawTable"></tbody>
+  </table>
+</div>
 
 </div>
 
 <script>
+
 const token = localStorage.getItem("adminToken");
 
-if (!token) {
-  window.location.href = "/admin/login.html";
+if(!token){
+  window.location.href="/admin/login.html";
 }
 
-async function loadDashboard(){
-  const res = await fetch("/api/admin/dashboard", {
-    headers: { Authorization: "Bearer " + token }
+function logout(){
+  localStorage.removeItem("adminToken");
+  location.href="/admin/login.html";
+}
+
+async function load(){
+
+  const res = await fetch("/api/admin/dashboard",{
+    headers:{ Authorization:"Bearer "+token }
   });
 
   const d = await res.json();
 
-  // ✅ FIXED VALUES
-  document.getElementById("users").innerText = d.totalUsers || 0;
-  document.getElementById("dep").innerText = "₹" + (d.totalDeposits || 0);
-  document.getElementById("with").innerText = "₹" + (d.totalWithdraws || 0);
+  // 🔥 STATS
+  users.innerText = d.totalUsers || 0;
+  dep.innerText = "₹" + (d.totalDeposits || 0);
+  withdraw.innerText = "₹" + (d.totalWithdraws || 0);
+  profit.innerText = "₹" + ((d.totalDeposits||0)-(d.totalWithdraws||0));
 
-  document.getElementById("profit").innerText =
-    "₹" + ((d.totalDeposits || 0) - (d.totalWithdraws || 0));
-
-  // 🔥 USER TABLE
-  let html = "";
-
-  d.users?.forEach(u => {
-    html += `
-      <tr>
-        <td>${u.phone}</td>
-        <td>₹${u.wallet}</td>
-        <td>₹${u.wageringLeft}</td>
-        <td>₹${u.bonus}</td>
-      </tr>
-    `;
+  // 🔥 USERS
+  let uhtml="";
+  d.users?.forEach(u=>{
+    uhtml+=`
+    <tr>
+      <td>${u.phone}</td>
+      <td>₹${u.wallet}</td>
+      <td>₹${u.bonus}</td>
+      <td>₹${u.wageringLeft}</td>
+      <td>${u.role}</td>
+    </tr>`;
   });
+  usersTable.innerHTML=uhtml;
 
-  document.getElementById("userTable").innerHTML = html;
+  // 🔥 DEPOSITS
+  let dhtml="";
+  d.deposits?.forEach(x=>{
+    dhtml+=`
+    <tr>
+      <td>${x.userId}</td>
+      <td>₹${x.amount}</td>
+      <td>${x.status}</td>
+    </tr>`;
+  });
+  depositsTable.innerHTML=dhtml;
+
+  // 🔥 WITHDRAW
+  let whtml="";
+  d.withdraws?.forEach(x=>{
+    whtml+=`
+    <tr>
+      <td>${x.userId}</td>
+      <td>₹${x.amount}</td>
+      <td>${x.status}</td>
+    </tr>`;
+  });
+  withdrawTable.innerHTML=whtml;
+
 }
 
-setInterval(loadDashboard, 5000);
-loadDashboard();
+setInterval(load,4000);
+load();
+
 </script>
 
 </body>
