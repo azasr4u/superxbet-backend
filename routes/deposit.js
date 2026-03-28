@@ -1,5 +1,6 @@
 import express from "express";
 import Deposit from "../models/Deposit.js";
+import UPI from "../models/UPI.js";
 import MQR from "../models/MQR.js";
 import Bank from "../models/BankAccount.js";
 
