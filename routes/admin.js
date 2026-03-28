@@ -12,7 +12,7 @@ import Match from "../models/Match.js";
 import Bet from "../models/Bet.js";
 import LiveOdds from "../models/LiveOdds.js";
 import KYC from "../models/KYC.js";
-import UPI from "../models/UPI.js";
+import UPI from "../../models/UPI.js";
 import MQR from "../models/MQR.js";
 import Bank from "../models/BankAccount.js";
 
