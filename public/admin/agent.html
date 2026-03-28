@@ -62,7 +62,7 @@ if (!token) window.location.href = "/admin/login.html";
 
 async function load(){
 
-  const res = await fetch("/api/admin/agent/users", {
+  const res = await fetch("/api/agent/users", {
     headers:{ Authorization:"Bearer "+token }
   });
 

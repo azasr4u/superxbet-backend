@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = "superxbet_secret";
+const JWT_SECRET = process.env.JWT_SECRET || "superxbet_secret";
 
 export const verifyToken = (req, res, next) => {
   try {
@@ -20,26 +20,15 @@ export const verifyToken = (req, res, next) => {
 };
 
 export const adminOnly = (req, res, next) => {
-  try {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ error: "Admin only" });
-    }
-    next();
-  } catch {
-    return res.status(403).json({ error: "Access denied" });
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin only" });
   }
+  next();
 };
 
 export const adminOrAgent = (req, res, next) => {
-  try {
-    if (
-      !req.user ||
-      (req.user.role !== "admin" && req.user.role !== "agent")
-    ) {
-      return res.status(403).json({ error: "Access denied" });
-    }
-    next();
-  } catch {
+  if (!req.user || !["admin", "agent"].includes(req.user.role)) {
     return res.status(403).json({ error: "Access denied" });
   }
+  next();
 };

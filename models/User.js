@@ -1,40 +1,105 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-  fullName: String,
-  address: String,
-  phone: { type: String, unique: true },
-  email: String,
-  password: String,
 
-  // 💰 REAL MONEY
-  walletBalance: { type: Number, default: 0 },
+  // 👤 BASIC INFO
+  fullName: {
+    type: String,
+    trim: true
+  },
 
-  // 🎁 BONUS
-  bonusBalance: { type: Number, default: 0 },
+  address: {
+    type: String,
+    trim: true
+  },
 
-  // 🎯 WAGER REQUIRED
-  wageringRequired: { type: Number, default: 0 },
+  phone: {
+    type: String,
+    unique: true,
+    required: true,
+    index: true
+  },
 
-  // 🔥 REFERRAL
-  referralCode: { type: String, unique: true, sparse: true },
-  referredBy: { type: String, default: null },
-  referralRewarded: { type: Boolean, default: false },
+  email: {
+    type: String,
+    lowercase: true,
+    trim: true
+  },
 
-  // FIRST DEPOSIT
-  isFirstDeposit: { type: Boolean, default: false },
+  password: {
+    type: String,
+    required: true
+  },
 
-  // 🔥 ROLE SYSTEM
+  // 💰 WALLET SYSTEM
+  walletBalance: {
+    type: Number,
+    default: 0
+  },
+
+  bonusBalance: {
+    type: Number,
+    default: 0
+  },
+
+  wageringRequired: {
+    type: Number,
+    default: 0
+  },
+
+  // 🎯 FIRST DEPOSIT TRACK
+  isFirstDeposit: {
+    type: Boolean,
+    default: false
+  },
+
+  // 🔥 REFERRAL SYSTEM
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+
+  referredBy: {
+    type: String,
+    default: null
+  },
+
+  referralRewarded: {
+    type: Boolean,
+    default: false
+  },
+
+  // 🔐 ROLE SYSTEM (FIXED + SECURE)
   role: {
     type: String,
     enum: ["user", "admin", "agent"],
-    default: "user"
+    default: "user",
+    index: true
   },
 
-  // ✅ NEW (ADMIN FEATURES)
-  blocked: { type: Boolean, default: false },
-  kycVerified: { type: Boolean, default: false }
+  // 👨‍💼 AGENT LINK
+  agentId: {
+    type: String,
+    default: null,
+    index: true
+  },
 
-}, { timestamps: true });
+  // 🚫 BLOCK SYSTEM
+  blocked: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+
+  // ✅ KYC SYSTEM
+  kycVerified: {
+    type: Boolean,
+    default: false
+  }
+
+}, {
+  timestamps: true
+});
 
 export default mongoose.model("User", userSchema);

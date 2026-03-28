@@ -5,104 +5,168 @@
 
 <style>
 body {
-  font-family:Segoe UI;
-  background: linear-gradient(135deg,#36d1dc,#5b86e5);
+  margin:0;
+  font-family:Arial;
+  background: linear-gradient(135deg,#667eea,#764ba2);
   color:white;
+}
+
+.container {
   padding:20px;
 }
 
 table {
   width:100%;
-  border-collapse:collapse;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  border-radius:10px;
+  border-collapse: collapse;
 }
 
-th,td { padding:12px; }
+th, td {
+  padding:12px;
+  text-align:left;
+}
+
+th {
+  background: rgba(255,255,255,0.2);
+}
+
+tr {
+  background: rgba(255,255,255,0.05);
+  margin-bottom:10px;
+}
 
 button {
-  border:none;
   padding:6px 10px;
+  border:none;
   border-radius:6px;
-  margin:2px;
-  color:white;
   cursor:pointer;
 }
 
-.add { background:green; }
-.block { background:red; }
+.block { background:#ff4d4d; color:white; }
+.unblock { background:#4CAF50; color:white; }
+.kyc { background:#2196F3; color:white; }
+.balance { background:#ff9800; color:white; }
+
 </style>
 </head>
 
 <body>
 
-<h2>👤 Users</h2>
+<div class="container">
+
+<h2>👥 Users Control</h2>
 
 <table>
 <thead>
 <tr>
 <th>Phone</th>
 <th>Balance</th>
-<th>Action</th>
+<th>Status</th>
+<th>KYC</th>
+<th>Actions</th>
 </tr>
 </thead>
 
 <tbody id="users"></tbody>
+
 </table>
+
+</div>
 
 <script>
 
 const token = localStorage.getItem("adminToken");
 
-async function load(){
-  const res = await fetch("/api/admin/users",{
-    headers:{Authorization:"Bearer "+token}
+async function loadUsers() {
+  const res = await fetch("/api/admin/users", {
+    headers:{ Authorization:"Bearer "+token }
   });
 
-  const data = await res.json();
-  const table = document.getElementById("users");
-  table.innerHTML = "";
+  const users = await res.json();
 
-  data.forEach(u=>{
-    table.innerHTML += `
+  const tbody = document.getElementById("users");
+  tbody.innerHTML = "";
+
+  users.forEach(u => {
+
+    tbody.innerHTML += `
     <tr>
       <td>${u.phone}</td>
       <td>₹${u.walletBalance}</td>
+
+      <td>${u.blocked ? "Blocked" : "Active"}</td>
+
+      <td>${u.kycVerified ? "Verified" : "Pending"}</td>
+
       <td>
-        <button class="add" onclick="bonus('${u._id}')">+Bonus</button>
-        <button class="block" onclick="block('${u._id}')">Block</button>
+        <button class="${u.blocked ? "unblock":"block"}"
+        onclick="blockUser('${u._id}', ${!u.blocked})">
+        ${u.blocked ? "Unblock":"Block"}
+        </button>
+
+        <button class="kyc"
+        onclick="kycUser('${u._id}', ${!u.kycVerified})">
+        KYC
+        </button>
+
+        <button class="balance"
+        onclick="updateBalance('${u._id}')">
+        Balance
+        </button>
       </td>
-    </tr>`;
+    </tr>
+    `;
   });
 }
 
-async function bonus(id){
-  const amount = prompt("Enter amount");
-  if(!amount) return;
 
-  await fetch("/api/admin/bonus",{
+// BLOCK
+async function blockUser(id, status){
+  await fetch("/api/admin/user/block",{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       Authorization:"Bearer "+token
     },
-    body:JSON.stringify({userId:id,amount})
+    body:JSON.stringify({ userId:id, blocked:status })
   });
 
-  load();
+  loadUsers();
 }
 
-async function block(id){
-  await fetch("/api/admin/user/block/"+id,{
+
+// KYC
+async function kycUser(id, status){
+  await fetch("/api/admin/user/kyc",{
     method:"POST",
-    headers:{Authorization:"Bearer "+token}
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({ userId:id, status })
   });
 
-  load();
+  loadUsers();
 }
 
-load();
+
+// BALANCE
+async function updateBalance(id){
+  const amount = prompt("Enter amount (+/-)");
+
+  await fetch("/api/admin/user/balance",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({ userId:id, amount })
+  });
+
+  loadUsers();
+}
+
+
+loadUsers();
 
 </script>
 

@@ -13,34 +13,35 @@ import withdrawRoutes from "./routes/withdraw.js";
 import settingsRoutes from "./routes/settings.js";
 import betRoutes from "./routes/bet.js";
 import oddsRoutes from "./routes/odds.js";
-import adminBanking from "./routes/adminBanking.js";
 import userRoutes from "./routes/user.js";
 import paymentRoutes from "./routes/payment.js";
+import agentRoutes from "./routes/agent.js";
 
-
+// ❌ REMOVE THIS OR MERGE INTO adminRoutes
+// import adminBanking from "./routes/adminBanking.js";
 
 const app = express();
 
-// ✅ FIX __dirname FIRST
+// ✅ __dirname FIX
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ MIDDLEWARE FIRST
+// ✅ MIDDLEWARE
 app.use(express.json());
 
 app.use(cors({
-  origin: "*",
+  origin: "*", // 🔒 change to your domain later
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// ✅ STATIC
+// ✅ STATIC ADMIN PANEL
 app.use("/admin", express.static(path.join(__dirname, "public/admin")));
 
-// ✅ DB
+// ✅ CONNECT DB FIRST
 connectDB();
 
-// ✅ ROUTES (AFTER middleware)
+// ✅ ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/game", gameRoutes);
@@ -49,10 +50,11 @@ app.use("/api/withdraw", withdrawRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/bet", betRoutes);
 app.use("/api/odds", oddsRoutes);
-app.use("/api/admin", adminBanking);
 app.use("/api/user", userRoutes);
 app.use("/api/payment", paymentRoutes);
-// ✅ TEST
+app.use("/api/agent", agentRoutes);
+
+// ✅ TEST ROUTE
 app.get("/", (req, res) => {
   res.send("SuperXbet Backend Running 🚀");
 });
