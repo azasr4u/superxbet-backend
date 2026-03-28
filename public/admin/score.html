@@ -1,45 +1,105 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<meta charset="UTF-8">
+<title>Score Control</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  display:flex;
+  background:#1e1e2f;
+  color:white;
+}
+
+.sidebar {
+  width:220px;
+  height:100vh;
+  background:#111;
+  padding:20px;
+}
+
+.sidebar a {
+  display:block;
+  padding:10px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
+}
+
+.main {
+  flex:1;
+  padding:30px;
+}
+
+.card {
+  background:#2c2c3e;
+  padding:20px;
+  border-radius:10px;
+  max-width:500px;
+}
+
+input, select {
+  width:100%;
+  padding:8px;
+  margin:5px 0;
+}
+
+button {
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.run { background:green; }
+.wicket { background:red; }
+</style>
 </head>
 
-<body onload="protect();applyRoleControl();loadMatch()">
+<body onload="init()">
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-
   <a href="dashboard.html">Dashboard</a>
   <a href="score.html">Score Control</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
 </div>
 
 <div class="main">
 
-<h2>Live Score Control</h2>
+<h2>🏏 Live Score Control</h2>
 
 <div class="card">
 
-<input id="matchName" placeholder="Match"><br><br>
+<!-- 🔥 ALL FIELDS (UNCHANGED) -->
+<input id="matchName" placeholder="Match">
+<input id="teamA" placeholder="Team A">
+<input id="teamB" placeholder="Team B">
 
-<input id="teamA" placeholder="Team A"><br><br>
-<input id="teamB" placeholder="Team B"><br><br>
-
-<input id="score" placeholder="Score"><br><br>
-<input id="wickets" placeholder="Wickets"><br><br>
-<input id="overs" placeholder="Overs"><br><br>
-<input id="target" placeholder="Target"><br><br>
+<input id="score" placeholder="Score" value="0">
+<input id="wickets" placeholder="Wickets" value="0">
+<input id="overs" placeholder="Overs" value="0">
+<input id="target" placeholder="Target" value="0">
 
 <select id="innings">
   <option value="1">1st Innings</option>
   <option value="2">2nd Innings</option>
 </select>
 
+<br>
+
+<!-- 🔥 BUTTONS -->
+<button class="run" onclick="addRun(1)">+1</button>
+<button class="run" onclick="addRun(2)">+2</button>
+<button class="run" onclick="addRun(4)">+4</button>
+<button class="run" onclick="addRun(6)">+6</button>
+<button class="wicket" onclick="addWicket()">WICKET</button>
+
 <br><br>
 
-<label>Adjust Odds (%)</label><br>
+<label>Adjust Odds (%)</label>
 <input type="range" id="adjust" min="-20" max="20" value="0" oninput="showAdjust()">
 <span id="adjustVal">0%</span>
 
@@ -58,57 +118,87 @@
 
 <script>
 
+const API = "/api";
+const token = localStorage.getItem("adminToken");
+
+function headers(){
+  return {
+    "Content-Type":"application/json",
+    "Authorization":"Bearer "+token
+  };
+}
+
+function init(){
+  loadMatch();
+}
+
+// 🔥 LOAD FULL MATCH
+async function loadMatch(){
+  const res = await fetch(API+"/admin/match",{headers:headers()});
+  const m = await res.json();
+
+  if(!m) return;
+
+  matchName.value = m.matchName || "";
+  teamA.value = m.teamA || "";
+  teamB.value = m.teamB || "";
+
+  score.value = m.score || 0;
+  wickets.value = m.wickets || 0;
+  overs.value = m.overs || 0;
+  target.value = m.target || 0;
+  innings.value = m.innings || 1;
+}
+
+// 🔥 BUTTON LOGIC
+function addRun(r){
+  score.value = Number(score.value) + r;
+  updateScore();
+}
+
+function addWicket(){
+  wickets.value = Number(wickets.value) + 1;
+  updateScore();
+}
+
 function showAdjust(){
   adjustVal.innerText = adjust.value + "%";
 }
 
-async function loadMatch(){
-  const res = await fetch(API+"/admin/match");
-  const m = await res.json();
-  if (!m) return;
-
-  matchName.value = m.matchName;
-  teamA.value = m.teamA;
-  teamB.value = m.teamB;
-  score.value = m.score;
-  wickets.value = m.wickets;
-  overs.value = m.overs;
-  target.value = m.target;
-  innings.value = m.innings;
-}
-
+// 🔥 FINAL UPDATE (FULL PAYLOAD)
 async function updateScore(){
 
-const res = await fetch(API+"/admin/match/update-with-odds",{
-method:"POST",
-headers:authHeaders(),
-body: JSON.stringify({
-matchName: matchName.value,
-teamA: teamA.value,
-teamB: teamB.value,
-score: Number(score.value),
-wickets: Number(wickets.value),
-overs: Number(overs.value),
-target: Number(target.value),
-innings: Number(innings.value),
-adjust: Number(adjust.value)
-})
-});
+  const res = await fetch(API+"/admin/match/update-with-odds",{
+    method:"POST",
+    headers:headers(),
+    body:JSON.stringify({
+      matchName: matchName.value,
+      teamA: teamA.value,
+      teamB: teamB.value,
+      score: Number(score.value),
+      wickets: Number(wickets.value),
+      overs: Number(overs.value),
+      target: Number(target.value),
+      innings: Number(innings.value),
+      adjust: Number(adjust.value)
+    })
+  });
 
-const data = await res.json();
+  const data = await res.json();
 
-autoOdds.innerHTML = `
-<h3>Auto Odds</h3>
-${teamA.value}: ${data.autoOdds.teamA}<br>
-${teamB.value}: ${data.autoOdds.teamB}
-`;
+  // AUTO ODDS
+  autoOdds.innerHTML = `
+    <h3>Auto Odds</h3>
+    ${teamA.value}: ${data.autoOdds?.teamA || 0}<br>
+    ${teamB.value}: ${data.autoOdds?.teamB || 0}
+  `;
 
-finalOdds.innerHTML = `
-<h3>Final Odds</h3>
-${teamA.value}: ${data.finalOdds.teamA}<br>
-${teamB.value}: ${data.finalOdds.teamB}
-`;
-
+  // FINAL ODDS
+  finalOdds.innerHTML = `
+    <h3>Final Odds</h3>
+    ${teamA.value}: ${data.finalOdds?.teamA || 0}<br>
+    ${teamB.value}: ${data.finalOdds?.teamB || 0}
+  `;
 }
 
 </script>

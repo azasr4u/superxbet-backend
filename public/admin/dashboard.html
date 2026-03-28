@@ -22,10 +22,6 @@ body {
   position:fixed;
 }
 
-.sidebar h2 {
-  margin-bottom:30px;
-}
-
 .menu a {
   display:block;
   padding:14px;
@@ -33,11 +29,6 @@ body {
   color:white;
   text-decoration:none;
   border-radius:10px;
-  transition:0.3s;
-}
-
-.menu a:hover {
-  background:rgba(255,255,255,0.2);
 }
 
 .active {
@@ -51,25 +42,7 @@ body {
   padding:40px;
 }
 
-/* TOPBAR */
-.topbar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:40px;
-}
-
-.logout {
-  padding:10px 18px;
-  border:none;
-  border-radius:10px;
-  background:linear-gradient(135deg,#ff7e5f,#feb47b);
-  color:white;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-/* GRID (2x2 PERFECT) */
+/* GRID */
 .grid {
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -83,41 +56,36 @@ body {
   border-radius:15px;
   background: rgba(255,255,255,0.15);
   backdrop-filter: blur(12px);
-  box-shadow:0 10px 25px rgba(0,0,0,0.2);
-  transition:0.3s;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-}
-
-/* TEXT */
-.title {
-  font-size:14px;
-  opacity:0.8;
 }
 
 .value {
-  font-size:32px;
+  font-size:28px;
   font-weight:bold;
-  margin-top:10px;
 }
 
-/* RESPONSIVE */
-@media(max-width:900px){
-  .grid{
-    grid-template-columns:1fr;
-  }
+/* TABLE */
+table {
+  width:100%;
+  margin-top:40px;
+  border-collapse:collapse;
+  background:rgba(255,255,255,0.1);
+}
+
+th, td {
+  padding:12px;
+  text-align:center;
+}
+
+th {
+  background:rgba(0,0,0,0.2);
 }
 </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
   <h2>SuperXbet</h2>
-
   <div class="menu">
     <a class="active">Dashboard</a>
     <a href="/admin/users.html">Users</a>
@@ -128,35 +96,44 @@ body {
   </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
-  <div class="topbar">
-    <h2>📊 Admin Dashboard</h2>
-    <button class="logout" onclick="logout()">Logout</button>
-  </div>
+  <h2>📊 Admin Dashboard</h2>
 
   <div class="grid">
     <div class="card">
-      <div class="title">Users</div>
+      <div>Users</div>
       <div id="users" class="value">0</div>
     </div>
 
     <div class="card">
-      <div class="title">Deposits</div>
+      <div>Deposits</div>
       <div id="dep" class="value">₹0</div>
     </div>
 
     <div class="card">
-      <div class="title">Withdraws</div>
+      <div>Withdraws</div>
       <div id="with" class="value">₹0</div>
     </div>
 
     <div class="card">
-      <div class="title">Profit</div>
+      <div>Profit</div>
       <div id="profit" class="value">₹0</div>
     </div>
   </div>
+
+  <!-- 🔥 USER DETAILS TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Phone</th>
+        <th>Wallet</th>
+        <th>Wager Left</th>
+        <th>Bonus</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
 
 </div>
 
@@ -167,31 +144,39 @@ if (!token) {
   window.location.href = "/admin/login.html";
 }
 
-function logout(){
-  localStorage.removeItem("adminToken");
-  window.location.href = "/admin/login.html";
-}
-
 async function loadDashboard(){
-  try {
-    const res = await fetch("/api/admin/dashboard", {
-      headers: { Authorization: "Bearer " + token }
-    });
+  const res = await fetch("/api/admin/dashboard", {
+    headers: { Authorization: "Bearer " + token }
+  });
 
-    const d = await res.json();
+  const d = await res.json();
 
-    document.getElementById("users").innerText = d.users || 0;
-    document.getElementById("dep").innerText = "₹" + (d.deposits || 0);
-    document.getElementById("with").innerText = "₹" + (d.withdraws || 0);
-    document.getElementById("profit").innerText =
-      "₹" + ((d.deposits || 0) - (d.withdraws || 0));
+  // ✅ FIXED VALUES
+  document.getElementById("users").innerText = d.totalUsers || 0;
+  document.getElementById("dep").innerText = "₹" + (d.totalDeposits || 0);
+  document.getElementById("with").innerText = "₹" + (d.totalWithdraws || 0);
 
-  } catch (err) {
-    console.log(err);
-  }
+  document.getElementById("profit").innerText =
+    "₹" + ((d.totalDeposits || 0) - (d.totalWithdraws || 0));
+
+  // 🔥 USER TABLE
+  let html = "";
+
+  d.users?.forEach(u => {
+    html += `
+      <tr>
+        <td>${u.phone}</td>
+        <td>₹${u.wallet}</td>
+        <td>₹${u.wageringLeft}</td>
+        <td>₹${u.bonus}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("userTable").innerHTML = html;
 }
 
-setInterval(loadDashboard, 3000);
+setInterval(loadDashboard, 5000);
 loadDashboard();
 </script>
 

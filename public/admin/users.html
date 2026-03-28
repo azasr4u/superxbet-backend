@@ -76,6 +76,7 @@ button {
 
 const token = localStorage.getItem("adminToken");
 
+// LOAD USERS
 async function loadUsers() {
   const res = await fetch("/api/admin/users", {
     headers:{ Authorization:"Bearer "+token }
@@ -91,7 +92,7 @@ async function loadUsers() {
     tbody.innerHTML += `
     <tr>
       <td>${u.phone}</td>
-      <td>₹${u.walletBalance}</td>
+      <td>₹${u.walletBalance || 0}</td>
 
       <td>${u.blocked ? "Blocked" : "Active"}</td>
 
@@ -105,7 +106,7 @@ async function loadUsers() {
 
         <button class="kyc"
         onclick="kycUser('${u._id}', ${!u.kycVerified})">
-        KYC
+        ${u.kycVerified ? "Unverify" : "Verify"}
         </button>
 
         <button class="balance"
@@ -119,7 +120,7 @@ async function loadUsers() {
 }
 
 
-// BLOCK
+// BLOCK USER
 async function blockUser(id, status){
   await fetch("/api/admin/user/block",{
     method:"POST",
@@ -134,7 +135,7 @@ async function blockUser(id, status){
 }
 
 
-// KYC
+// KYC TOGGLE
 async function kycUser(id, status){
   await fetch("/api/admin/user/kyc",{
     method:"POST",
@@ -149,9 +150,18 @@ async function kycUser(id, status){
 }
 
 
-// BALANCE
+// BALANCE UPDATE
 async function updateBalance(id){
-  const amount = prompt("Enter amount (+/-)");
+  let amount = prompt("Enter amount (+/-)");
+
+  if (!amount) return;
+
+  amount = Number(amount);
+
+  if (isNaN(amount)) {
+    alert("Invalid amount");
+    return;
+  }
 
   await fetch("/api/admin/user/balance",{
     method:"POST",

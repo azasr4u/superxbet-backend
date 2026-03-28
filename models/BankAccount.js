@@ -2,10 +2,25 @@ import mongoose from "mongoose";
 
 const bankSchema = new mongoose.Schema({
 
-  bankName: String,
-  accountNumber: String,
-  accountName: String,
-  ifsc: String,
+  bankName: {
+    type: String,
+    trim: true
+  },
+
+  accountNumber: {
+    type: String,
+    trim: true
+  },
+
+  accountName: {   // ✅ KEEP YOUR ORIGINAL (NO BREAK)
+    type: String,
+    trim: true
+  },
+
+  ifsc: {
+    type: String,
+    trim: true
+  },
 
   usedBy: [
     {
@@ -19,6 +34,6 @@ const bankSchema = new mongoose.Schema({
     default: true
   }
 
-});
+}, { timestamps: true }); // ✅ ADDED
 
 export default mongoose.model("BankAccount", bankSchema);

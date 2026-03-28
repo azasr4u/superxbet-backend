@@ -2,9 +2,8 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import {
-  verifyToken
-} from "../middleware/auth.js";
+import KYC from "../models/KYC.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 const JWT_SECRET = "superxbet_secret";
@@ -25,7 +24,6 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔥 GENERATE UNIQUE REFERRAL
     const myReferral = "SX" + Math.floor(100000 + Math.random() * 900000);
 
     let referredBy = null;
@@ -80,24 +78,30 @@ router.post("/login", async (req, res) => {
 
     if (!isMatch) return res.status(400).json({ error: "Wrong password" });
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET);
+    // ✅ TOKEN (CONSISTENT)
+    const token = jwt.sign(
+      { id: user._id },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.json({
-  token,
-  user: {
-    id: user._id,
-    fullName: user.fullName,
-    phone: user.phone,
-    walletBalance: user.walletBalance,
-  }
-});
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        phone: user.phone,
+        walletBalance: user.walletBalance,
+      }
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 
-// ================= PROFILE =================
+// ================= PROFILE (FINAL FIXED) =================
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -106,21 +110,31 @@ router.get("/profile", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // ✅ FIXED KYC LOOKUP (handles ObjectId + string)
+    const kyc =
+      await KYC.findOne({ userId: user._id }) ||
+      await KYC.findOne({ userId: user._id.toString() });
+
     res.json({
       fullName: user.fullName,
       phone: user.phone,
       email: user.email,
 
-      walletBalance: user.walletBalance || 0, // ✅ CRITICAL FIX
-
+      walletBalance: user.walletBalance || 0,
       bonus: user.bonusBalance || 0,
       wagering: user.wageringRequired || 0,
 
-      referralCode: user.referralCode
+      referralCode: user.referralCode,
+
+      // ✅ FINAL LOGIC (NO MORE PENDING BUG)
+      kycStatus: user.kycVerified
+        ? "Approved"
+        : (kyc?.status || "Pending")
     });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 export default router;

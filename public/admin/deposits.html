@@ -126,12 +126,12 @@ async function load(){
   data.forEach(d=>{
     html += `
       <tr>
-        <td>${d.userId}</td>
+        <td>${d.userId?.phone || "N/A"}</td>
         <td>₹${d.amount}</td>
-        <td class="${d.status}">${d.status}</td>
+        <td class="${d.status.toLowerCase()}">${d.status}</td>
         <td>
           ${
-            d.status === "pending" ? `
+            d.status === "Pending" ? `
             <button class="btn approve" onclick="approve('${d._id}')">Approve</button>
             <button class="btn reject" onclick="reject('${d._id}')">Reject</button>
             ` : "-"

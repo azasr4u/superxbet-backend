@@ -1,74 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<meta charset="UTF-8">
+<title>Banking System</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
+  color:white;
+  padding:30px;
+}
+
+h2 { margin-bottom:20px; }
+
+input {
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:6px;
+}
+
+button {
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#ff7e5f;
+  color:white;
+}
+
+table {
+  width:100%;
+  margin-top:20px;
+  background:rgba(255,255,255,0.1);
+}
+
+td, th {
+  padding:10px;
+  text-align:center;
+}
+</style>
 </head>
 
-<body onload="protect();applyRoleControl();loadBanking()">
+<body>
 
-<div class="sidebar">
-  <h2>SuperXbet</h2>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
+<h2>🏦 Banking System</h2>
 
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
-</div>
+<h3>Add UPI</h3>
+<input id="upi" placeholder="Enter UPI ID">
+<button onclick="addUpi()">Add</button>
 
-<div class="main">
-<h2>Banking</h2>
-
-<div class="card">
-
-<h3>Deposits</h3>
+<h3>UPI List</h3>
 <table>
-<tbody id="dep"></tbody>
+<thead><tr><th>UPI ID</th></tr></thead>
+<tbody id="upiTable"></tbody>
 </table>
-
-<h3>Withdraws</h3>
-<table>
-<tbody id="with"></tbody>
-</table>
-
-</div>
-
-</div>
 
 <script>
-async function loadBanking(){
+const token = localStorage.getItem("adminToken");
 
-const d = await loadDeposits();
-const w = await loadWithdraws();
+async function load(){
+  const res = await fetch("/api/admin/upi", {
+    headers:{ Authorization:"Bearer "+token }
+  });
 
-dep.innerHTML = d.map(x=>`
-<tr>
-<td>${x.userId?.phone}</td>
-<td>₹${x.amount}</td>
-<td>${x.status}</td>
-<td>
-${x.status==="Pending" ? `<button onclick="approveDeposit('${x._id}')">Approve</button>`:"Done"}
-</td>
-</tr>`).join("");
+  const data = await res.json();
 
-with.innerHTML = w.map(x=>`
-<tr>
-<td>${x.userId?.phone}</td>
-<td>₹${x.amount}</td>
-<td>${x.status}</td>
-<td>
-${x.status==="Pending" ? `<button onclick="approveWithdraw('${x._id}')">Approve</button>`:"Done"}
-</td>
-</tr>`).join("");
+  let html = "";
 
+  data.forEach(u=>{
+    html += `<tr><td>${u.upi}</td></tr>`;
+  });
+
+  document.getElementById("upiTable").innerHTML = html;
 }
+
+async function addUpi(){
+  const upi = document.getElementById("upi").value;
+
+  await fetch("/api/admin/upi",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ upi })
+  });
+
+  load();
+}
+
+load();
 </script>
 
 </body>

@@ -8,16 +8,51 @@
 body {
   margin:0;
   font-family:Segoe UI;
+  display:flex;
   background: linear-gradient(135deg,#4facfe,#8f94fb);
   color:white;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:220px;
+  height:100vh;
+  background: linear-gradient(180deg,#5f2c82,#49a09d);
   padding:20px;
+}
+
+.menu a {
+  display:block;
+  padding:12px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
+  border-radius:8px;
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
+
+/* MAIN */
+.main {
+  flex:1;
+  padding:30px;
+}
+
+/* CARD */
+.card {
+  background:rgba(255,255,255,0.15);
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
 }
 
 /* TABLE */
 table {
   width:100%;
-  border-collapse:collapse;
   background:rgba(255,255,255,0.1);
+  border-collapse:collapse;
 }
 
 th, td {
@@ -25,82 +60,122 @@ th, td {
   text-align:center;
 }
 
-th {
-  background:rgba(0,0,0,0.2);
-}
-
 button {
-  padding:6px 10px;
+  padding:8px 14px;
   border:none;
-  border-radius:8px;
-  cursor:pointer;
-  background:green;
+  border-radius:6px;
+  background:#ff7e5f;
   color:white;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<h2>👨‍💼 Agent Panel</h2>
+<div class="sidebar">
+  <h2>Agent Panel</h2>
 
-<table>
-<thead>
-<tr>
-<th>User</th>
-<th>Balance</th>
-<th>Action</th>
-</tr>
-</thead>
+  <div class="menu">
+    <a class="active">Dashboard</a>
+  </div>
+</div>
 
-<tbody id="data"></tbody>
-</table>
+<div class="main">
+
+  <h2>💼 Agent Dashboard</h2>
+
+  <!-- COMMISSION -->
+  <div class="card">
+    <h3>Total Commission</h3>
+    <h1 id="commission">₹0</h1>
+    <button onclick="withdraw()">Withdraw</button>
+  </div>
+
+  <!-- USERS -->
+  <div class="card">
+    <h3>Your Users</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Phone</th>
+          <th>Wallet</th>
+        </tr>
+      </thead>
+      <tbody id="users"></tbody>
+    </table>
+  </div>
+
+</div>
 
 <script>
+
 const token = localStorage.getItem("adminToken");
-if (!token) window.location.href = "/admin/login.html";
 
-async function load(){
+if (!token) {
+  window.location.href = "/admin/login.html";
+}
 
-  const res = await fetch("/api/agent/users", {
+
+// ================= LOAD USERS =================
+async function loadUsers(){
+  const res = await fetch("/api/admin/agent/users", {
     headers:{ Authorization:"Bearer "+token }
   });
 
-  const users = await res.json();
+  const data = await res.json();
 
   let html = "";
 
-  users.forEach(u=>{
+  data.forEach(u=>{
     html += `
       <tr>
         <td>${u.phone}</td>
-        <td>₹${u.balance}</td>
-        <td>
-          <button onclick="add('${u._id}')">Add Balance</button>
-        </td>
+        <td>₹${u.walletBalance || 0}</td>
       </tr>
     `;
   });
 
-  document.getElementById("data").innerHTML = html;
+  document.getElementById("users").innerHTML = html;
 }
 
-async function add(id){
-  const amount = prompt("Enter amount");
 
-  await fetch("/api/admin/bonus",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body: JSON.stringify({ userId:id, amount })
+// ================= LOAD COMMISSION =================
+async function loadCommission(){
+  const res = await fetch("/api/admin/agent/commission", {
+    headers:{ Authorization:"Bearer "+token }
   });
 
-  load();
+  const data = await res.json();
+
+  document.getElementById("commission").innerText =
+    "₹" + (data.commission || 0);
 }
 
-load();
+
+// ================= WITHDRAW =================
+async function withdraw(){
+  await fetch("/api/admin/agent/withdraw", {
+    method:"POST",
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  alert("Withdraw Successful");
+
+  loadCommission();
+}
+
+
+// ================= INIT =================
+function init(){
+  loadUsers();
+  loadCommission();
+}
+
+setInterval(init, 5000);
+init();
+
 </script>
 
 </body>

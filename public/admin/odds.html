@@ -104,23 +104,48 @@ button {
 const token = localStorage.getItem("adminToken");
 if (!token) window.location.href = "/admin/login.html";
 
+// LOAD CURRENT MATCH
 async function load(){
-  const res = await fetch("/api/admin/match/current", {
-    headers:{ Authorization:"Bearer "+token }
-  });
+  try {
+    const res = await fetch("/api/admin/match/current", {
+      headers:{ Authorization:"Bearer "+token }
+    });
 
-  const d = await res.json();
+    const d = await res.json();
 
-  if(d){
-    match.value = d.match;
-    teamA.value = d.teamA;
-    teamB.value = d.teamB;
-    oddsA.value = d.oddsA;
-    oddsB.value = d.oddsB;
+    if(d){
+      document.getElementById("match").value = d.match || "";
+      document.getElementById("teamA").value = d.teamA || "";
+      document.getElementById("teamB").value = d.teamB || "";
+      document.getElementById("oddsA").value = d.oddsA || "";
+      document.getElementById("oddsB").value = d.oddsB || "";
+    }
+  } catch(e){
+    console.log(e);
   }
 }
 
+
+// SAVE MATCH
 async function save(){
+
+  const match = document.getElementById("match").value;
+  const teamA = document.getElementById("teamA").value;
+  const teamB = document.getElementById("teamB").value;
+  const oddsA = Number(document.getElementById("oddsA").value);
+  const oddsB = Number(document.getElementById("oddsB").value);
+
+  // VALIDATION
+  if(!match || !teamA || !teamB){
+    alert("Fill all fields");
+    return;
+  }
+
+  if(isNaN(oddsA) || isNaN(oddsB)){
+    alert("Invalid odds");
+    return;
+  }
+
   await fetch("/api/admin/match/control",{
     method:"POST",
     headers:{
@@ -128,18 +153,27 @@ async function save(){
       Authorization:"Bearer "+token
     },
     body: JSON.stringify({
-      match:match.value,
-      teamA:teamA.value,
-      teamB:teamB.value,
-      oddsA:oddsA.value,
-      oddsB:oddsB.value
+      match,
+      teamA,
+      teamB,
+      oddsA,
+      oddsB
     })
   });
-  alert("Updated");
+
+  alert("Match Updated ✅");
 }
 
+
+// SET RESULT
 async function result(){
-  const winner = prompt("Enter winner team");
+
+  const winner = prompt("Enter winner team name exactly");
+
+  if(!winner){
+    alert("Cancelled");
+    return;
+  }
 
   await fetch("/api/admin/match/result",{
     method:"POST",
@@ -150,7 +184,7 @@ async function result(){
     body: JSON.stringify({ winner })
   });
 
-  alert("Match settled");
+  alert("Match Result Set ✅");
 }
 
 load();

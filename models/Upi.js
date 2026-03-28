@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const upiSchema = new mongoose.Schema({
-
   upiId: {
     type: String,
     required: true
@@ -21,4 +20,4 @@ const upiSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export default mongoose.model("Upi", upiSchema);
+export default mongoose.models.UPI || mongoose.model("UPI", upiSchema);

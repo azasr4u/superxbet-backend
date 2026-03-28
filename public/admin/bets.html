@@ -128,17 +128,17 @@ async function load(){
   data.forEach(b=>{
     html += `
       <tr>
-        <td>${b.userId}</td>
+        <td>${b.userId?.phone || "N/A"}</td>
         <td>${b.match}</td>
-        <td>${b.selection}</td>
+        <td>${b.selection || "-"}</td>
         <td>₹${b.stake}</td>
         <td>${b.odds}</td>
         <td class="${b.status}">${b.status}</td>
         <td>
           ${
             b.status === "pending" ? `
-            <button class="btn win" onclick="settle('${b._id}','win')">Win</button>
-            <button class="btn lose" onclick="settle('${b._id}','lose')">Lose</button>
+            <button class="btn win" onclick="settle('${b._id}', 'win')">Win</button>
+            <button class="btn lose" onclick="settle('${b._id}', 'lose')">Lose</button>
             ` : "-"
           }
         </td>
@@ -149,14 +149,20 @@ async function load(){
   document.getElementById("data").innerHTML = html;
 }
 
-async function settle(id,result){
+
+// SETTLE BET
+async function settle(id, result){
+
+  // map UI → backend
+  let finalResult = result === "win" ? "won" : "lost";
+
   await fetch("/api/admin/bet/settle/"+id,{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       Authorization:"Bearer "+token
     },
-    body: JSON.stringify({ result })
+    body: JSON.stringify({ result: finalResult })
   });
 
   load();

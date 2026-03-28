@@ -70,7 +70,7 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
-  // 🔐 ROLE SYSTEM (FIXED + SECURE)
+  // 🔐 ROLE SYSTEM
   role: {
     type: String,
     enum: ["user", "admin", "agent"],
@@ -78,11 +78,22 @@ const userSchema = new mongoose.Schema({
     index: true
   },
 
-  // 👨‍💼 AGENT LINK
+  // 👨‍💼 AGENT LINK (NO BREAK — KEEP STRING)
   agentId: {
     type: String,
     default: null,
     index: true
+  },
+
+  // 🔥 AGENT COMMISSION SYSTEM (NEW)
+  commissionBalance: {
+    type: Number,
+    default: 0
+  },
+
+  commissionPercent: {
+    type: Number,
+    default: 10   // default 10%
   },
 
   // 🚫 BLOCK SYSTEM

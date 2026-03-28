@@ -5,62 +5,81 @@ import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-/// 🔥 PLACE BET
+/// 🎯 PLACE BET (REAL)
 router.post("/place", verifyToken, async (req, res) => {
   try {
-
     const userId = req.user.id;
-    const { match, selection, selections, odds, stake } = req.body;
+    const { match, selection, stake, odds } = req.body;
 
     const user = await User.findById(userId);
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     if (user.walletBalance < stake) {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    /// 💰 WALLET DEDUCT
+    // 💸 DEDUCT MONEY
     user.walletBalance -= stake;
     await user.save();
 
-    /// 🔥 TYPE DETECT
-    const isBuilder = selections && Object.keys(selections).length > 0;
-
-    const bet = new Bet({
-      userId,
+    const bet = await Bet.create({
+      user: userId,
       match,
-      type: isBuilder ? "builder" : "single",
-      selection: isBuilder ? null : selection,
-      selections: isBuilder ? selections : null,
-      odds,
+      selection,
       stake,
-      potentialWin: stake * odds,
+      odds,
       status: "pending"
     });
 
-    await bet.save();
-
-    res.json({
-      success: true,
-      walletBalance: user.walletBalance
-    });
+    res.json({ success: true, bet });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Bet failed" });
+    res.status(500).json({ error: err.message });
   }
 });
 
+/// 🟢 WIN
+router.post("/win/:id", async (req, res) => {
+  try {
+    const bet = await Bet.findById(req.params.id).populate("user");
 
-/// 📜 MY BETS
-router.get("/my", verifyToken, async (req, res) => {
-  const bets = await Bet.find({ userId: req.user.id })
-    .sort({ createdAt: -1 });
+    if (!bet || bet.status !== "pending") {
+      return res.status(400).json({ error: "Invalid bet" });
+    }
 
-  res.json(bets);
+    const winAmount = bet.stake * bet.odds;
+
+    bet.status = "won";
+    await bet.save();
+
+    bet.user.walletBalance += winAmount;
+    await bet.user.save();
+
+    res.json({ success: true });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/// 🔴 LOSE
+router.post("/lose/:id", async (req, res) => {
+  try {
+    const bet = await Bet.findById(req.params.id);
+
+    if (!bet || bet.status !== "pending") {
+      return res.status(400).json({ error: "Invalid bet" });
+    }
+
+    bet.status = "lost";
+    await bet.save();
+
+    res.json({ success: true });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
