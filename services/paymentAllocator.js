@@ -1,4 +1,4 @@
-import Upi from "../models/Upi.js";
+import UPI from "../models/UPI.js";
 import MQR from "../models/MQR.js";
 import BankAccount from "../models/BankAccount.js";
 
@@ -10,7 +10,7 @@ function randomPick(list) {
 /// 🔥 UPI ALLOCATOR
 export async function getUpiForUser(userId) {
 
-  const all = await Upi.find({ active: true });
+  const all = await UPI.find({ active: true });
 
   const available = all.filter(
     u => !u.usedBy.includes(userId)

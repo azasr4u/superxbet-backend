@@ -1,5 +1,6 @@
 import express from "express";
 import Deposit from "../models/Deposit.js";
+import UPI from "../models/UPI.js";
 import MQR from "../models/MQR.js";
 import Bank from "../models/BankAccount.js";
 
@@ -11,18 +12,19 @@ router.post("/", async (req, res) => {
   try {
     const { userId, amount } = req.body;
 
-    let paymentMethod = "UPI";
+    let paymentMethod = null;
     let paymentValue = null;
 
     // ================= UPI =================
     let upi = await UPI.findOne({
       active: true,
-      usedBy: { $ne: userId }
+      usedBy: { $nin: [userId] }   // ✅ FIXED
     });
 
     // 🔁 RESET IF ALL USED
     if (!upi) {
       await UPI.updateMany({}, { $set: { usedBy: [] } });
+
       upi = await UPI.findOne({ active: true });
     }
 
@@ -36,10 +38,9 @@ router.post("/", async (req, res) => {
 
     // ================= MQR =================
     if (!paymentValue) {
-
       let mqr = await MQR.findOne({
         active: true,
-        usedBy: { $ne: userId }
+        usedBy: { $nin: [userId] }
       });
 
       if (!mqr) {
@@ -58,10 +59,9 @@ router.post("/", async (req, res) => {
 
     // ================= BANK =================
     if (!paymentValue) {
-
       let bank = await Bank.findOne({
         active: true,
-        usedBy: { $ne: userId }
+        usedBy: { $nin: [userId] }
       });
 
       if (!bank) {
@@ -101,7 +101,6 @@ router.post("/", async (req, res) => {
 
     await deposit.save();
 
-    // ================= RESPONSE =================
     res.json({
       message: "Deposit request submitted",
       deposit,
