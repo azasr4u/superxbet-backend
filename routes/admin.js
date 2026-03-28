@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
 
 import { verifyToken } from "../middleware/auth.js";
 import { adminOnly, agentOrAdmin } from "../middleware/roles.js";
