@@ -1,7 +1,7 @@
 import express from "express";
 import Deposit from "../models/Deposit.js";
-import Upi from "../models/UPI.js";
-import Mqr from "../models/MQR.js";
+import UPI from "../models/UPI.js";
+import MQR from "../models/MQR.js";
 import Bank from "../models/BankAccount.js";
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.post("/", async (req, res) => {
     let paymentValue = null;
 
     // ================= UPI =================
-    let upi = await Upi.findOne({
+    let upi = await UPI.findOne({
       active: true,
       usedBy: { $ne: userId }
     });
@@ -38,7 +38,7 @@ router.post("/", async (req, res) => {
     // ================= MQR =================
     if (!paymentValue) {
 
-      let mqr = await Mqr.findOne({
+      let mqr = await MQR.findOne({
         active: true,
         usedBy: { $ne: userId }
       });
