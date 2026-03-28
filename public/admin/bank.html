@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bank Panel</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  background:#4facfe;
+  color:white;
+}
+
+.main {
+  padding:20px;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.box {
+  background:rgba(255,255,255,0.1);
+  padding:10px;
+  border-radius:8px;
+}
+
+input {
+  width:100%;
+  padding:6px;
+  margin:5px 0;
+  border:none;
+  border-radius:5px;
+}
+
+button {
+  margin-top:20px;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:green;
+  color:white;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+
+  <a href="/admin/dashboard.html">Dashboard</a>
+
+  <a href="/admin/deposits.html">Deposits</a>
+  <a href="/admin/withdraws.html">Withdraws</a>
+
+  <a href="/admin/kyc.html">KYC</a>
+  <a href="/admin/referral.html">Referral</a>
+
+  <a href="/admin/upi.html">UPI</a>
+  <a href="/admin/mqr.html">MQR</a>
+  <a href="/admin/bank.html">Bank</a>
+
+  <a href="/admin/agents.html">Agents</a>
+
+  <a href="/admin/score.html">Score Panel</a>
+  <a href="/admin/bets.html">Bets</a>
+</div>
+
+<div class="main">
+  <h2>Bank Accounts (25–50)</h2>
+
+  <div class="grid" id="grid"></div>
+
+  <button onclick="save()">Save All</button>
+</div>
+
+<script>
+const token = localStorage.getItem("adminToken");
+
+// CREATE 30 BOXES
+for(let i=0;i<30;i++){
+
+  const div = document.createElement("div");
+  div.className = "box";
+
+  div.innerHTML = `
+    <input placeholder="Bank Name" id="bankName_${i}">
+    <input placeholder="Account Number" id="acc_${i}">
+    <input placeholder="Account Holder" id="holder_${i}">
+    <input placeholder="IFSC" id="ifsc_${i}">
+  `;
+
+  grid.appendChild(div);
+}
+
+// LOAD EXISTING
+async function load(){
+  const res = await fetch("/api/admin/bank",{
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  const data = await res.json();
+
+  data.forEach((b,i)=>{
+    document.getElementById("bankName_"+i).value = b.bankName;
+    document.getElementById("acc_"+i).value = b.accountNumber;
+    document.getElementById("holder_"+i).value = b.accountName;
+    document.getElementById("ifsc_"+i).value = b.ifsc;
+  });
+}
+
+// SAVE
+async function save(){
+
+  let banks = [];
+
+  for(let i=0;i<30;i++){
+    banks.push({
+      bankName: document.getElementById("bankName_"+i).value,
+      accountNumber: document.getElementById("acc_"+i).value,
+      accountName: document.getElementById("holder_"+i).value,
+      ifsc: document.getElementById("ifsc_"+i).value
+    });
+  }
+
+  await fetch("/api/admin/bank/save",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ banks })
+  });
+
+  alert("Saved");
+}
+
+load();
+</script>
+
+</body>
+</html>

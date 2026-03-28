@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MQR Panel</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  background:#4facfe;
+  color:white;
+}
+
+.main {
+  padding:20px;
+}
+
+input {
+  margin:10px 0;
+}
+
+img {
+  width:100px;
+  height:100px;
+  margin:5px;
+  border-radius:8px;
+}
+
+.grid {
+  display:flex;
+  flex-wrap:wrap;
+}
+
+button {
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:green;
+  color:white;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+
+  <a href="/admin/dashboard.html">Dashboard</a>
+
+  <a href="/admin/deposits.html">Deposits</a>
+  <a href="/admin/withdraws.html">Withdraws</a>
+
+  <a href="/admin/kyc.html">KYC</a>
+  <a href="/admin/referral.html">Referral</a>
+
+  <a href="/admin/upi.html">UPI</a>
+  <a href="/admin/mqr.html">MQR</a>
+  <a href="/admin/bank.html">Bank</a>
+
+  <a href="/admin/agents.html">Agents</a>
+
+  <a href="/admin/score.html">Score Panel</a>
+  <a href="/admin/bets.html">Bets</a>
+</div>
+
+<div class="main">
+  <h2>MQR Upload (Max 100)</h2>
+
+  <input type="file" id="files" multiple accept="image/*">
+
+  <br><br>
+
+  <button onclick="upload()">Upload QR Codes</button>
+
+  <h3>Preview</h3>
+  <div class="grid" id="preview"></div>
+</div>
+
+<script>
+const token = localStorage.getItem("adminToken");
+
+// PREVIEW
+files.onchange = () => {
+  preview.innerHTML = "";
+  for (let file of files.files) {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
+  }
+};
+
+// UPLOAD
+async function upload(){
+
+  const formData = new FormData();
+
+  for (let file of files.files) {
+    formData.append("qrs", file);
+  }
+
+  await fetch("/api/admin/mqr/upload", {
+    method: "POST",
+    headers:{ Authorization:"Bearer "+token },
+    body: formData
+  });
+
+  alert("Uploaded Successfully");
+}
+</script>
+
+</body>
+</html>

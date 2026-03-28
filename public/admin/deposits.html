@@ -13,7 +13,6 @@ body {
   color:white;
 }
 
-/* SIDEBAR */
 .sidebar {
   width:240px;
   height:100vh;
@@ -24,36 +23,31 @@ body {
 
 .menu a {
   display:block;
-  padding:14px;
-  margin-bottom:10px;
+  padding:12px;
+  margin-bottom:8px;
   color:white;
   text-decoration:none;
-  border-radius:10px;
+  border-radius:8px;
 }
 
 .active {
   background:rgba(255,255,255,0.3);
 }
 
-/* MAIN */
 .main {
   margin-left:240px;
   width:100%;
-  padding:40px;
+  padding:30px;
 }
 
-/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
   background:rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  border-radius:10px;
-  overflow:hidden;
 }
 
 th, td {
-  padding:15px;
+  padding:12px;
   text-align:center;
 }
 
@@ -61,22 +55,20 @@ th {
   background:rgba(0,0,0,0.2);
 }
 
-/* STATUS */
 .pending { color:yellow; }
 .approved { color:lime; }
 .rejected { color:red; }
 
-/* BUTTONS */
 .btn {
-  padding:6px 12px;
+  padding:6px 10px;
   border:none;
-  border-radius:8px;
+  border-radius:6px;
   cursor:pointer;
   margin:2px;
 }
 
-.approve { background:green; color:white; }
-.reject { background:red; color:white; }
+.green { background:green; color:white; }
+.red { background:red; color:white; }
 </style>
 </head>
 
@@ -84,13 +76,23 @@ th {
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-  <div class="menu">
-    <a href="/admin/dashboard.html">Dashboard</a>
-    <a class="active">Deposits</a>
-    <a href="/admin/users.html">Users</a>
-    <a href="/admin/withdraws.html">Withdraws</a>
-    <a href="/admin/bets.html">Bets</a>
-  </div>
+
+  <a href="/admin/dashboard.html">Dashboard</a>
+
+  <a href="/admin/deposits.html">Deposits</a>
+  <a href="/admin/withdraws.html">Withdraws</a>
+
+  <a href="/admin/kyc.html">KYC</a>
+  <a href="/admin/referral.html">Referral</a>
+
+  <a href="/admin/upi.html">UPI</a>
+  <a href="/admin/mqr.html">MQR</a>
+  <a href="/admin/bank.html">Bank</a>
+
+  <a href="/admin/agents.html">Agents</a>
+
+  <a href="/admin/score.html">Score Panel</a>
+  <a href="/admin/bets.html">Bets</a>
 </div>
 
 <div class="main">
@@ -101,6 +103,7 @@ th {
       <tr>
         <th>User</th>
         <th>Amount</th>
+        <th>Method</th>
         <th>Status</th>
         <th>Action</th>
       </tr>
@@ -112,9 +115,9 @@ th {
 
 <script>
 const token = localStorage.getItem("adminToken");
-if (!token) window.location.href = "/admin/login.html";
 
 async function load(){
+
   const res = await fetch("/api/admin/deposits", {
     headers:{ Authorization:"Bearer "+token }
   });
@@ -123,17 +126,21 @@ async function load(){
 
   let html = "";
 
-  data.forEach(d=>{
+  data.forEach(d => {
+
+    const status = (d.status || "").toLowerCase();
+
     html += `
       <tr>
         <td>${d.userId?.phone || "N/A"}</td>
         <td>₹${d.amount}</td>
-        <td class="${d.status.toLowerCase()}">${d.status}</td>
+        <td>${d.paymentMethod || "-"}</td>
+        <td class="${status}">${d.status}</td>
         <td>
           ${
-            d.status === "Pending" ? `
-            <button class="btn approve" onclick="approve('${d._id}')">Approve</button>
-            <button class="btn reject" onclick="reject('${d._id}')">Reject</button>
+            status === "pending" ? `
+            <button class="btn green" onclick="approve('${d._id}')">Approve</button>
+            <button class="btn red" onclick="reject('${d._id}')">Reject</button>
             ` : "-"
           }
         </td>
@@ -145,18 +152,24 @@ async function load(){
 }
 
 async function approve(id){
+  if (!confirm("Approve deposit?")) return;
+
   await fetch("/api/admin/deposit/approve/"+id,{
     method:"POST",
     headers:{ Authorization:"Bearer "+token }
   });
+
   load();
 }
 
 async function reject(id){
+  if (!confirm("Reject deposit?")) return;
+
   await fetch("/api/admin/deposit/reject/"+id,{
     method:"POST",
     headers:{ Authorization:"Bearer "+token }
   });
+
   load();
 }
 

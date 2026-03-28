@@ -1,37 +1,137 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<meta charset="UTF-8">
+<title>Agents</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  display:flex;
+  background:#4facfe;
+  color:white;
+}
+
+.sidebar {
+  width:240px;
+  height:100vh;
+  background:#5f2c82;
+  padding:20px;
+}
+
+.main {
+  flex:1;
+  padding:20px;
+}
+
+input {
+  padding:8px;
+  margin:5px;
+}
+
+button {
+  padding:8px;
+  margin:5px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.green { background:green; color:white; }
+.red { background:red; color:white; }
+
+table {
+  width:100%;
+  margin-top:20px;
+}
+
+td, th {
+  padding:10px;
+  text-align:center;
+}
+</style>
 </head>
 
-<body onload="protect();applyRoleControl()">
+<body>
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
-
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
 </div>
 
 <div class="main">
 
 <h2>Agents</h2>
 
-<div class="card">
-Agent system next upgrade
-</div>
+<input id="phone" placeholder="Phone">
+<input id="password" placeholder="Password">
+<button class="green" onclick="create()">Create Agent</button>
+
+<table>
+  <thead>
+    <tr>
+      <th>Phone</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="data"></tbody>
+</table>
 
 </div>
+
+<script>
+const token = localStorage.getItem("adminToken");
+
+async function load(){
+  const res = await fetch("/api/admin/agents",{
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  const data = await res.json();
+
+  let html = "";
+
+  data.forEach(a=>{
+    html += `
+      <tr>
+        <td>${a.phone}</td>
+        <td>
+          <button class="red" onclick="del('${a._id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("data").innerHTML = html;
+}
+
+async function create(){
+  await fetch("/api/admin/agent/create",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({
+      phone: phone.value,
+      password: password.value
+    })
+  });
+
+  load();
+}
+
+async function del(id){
+  await fetch("/api/admin/agent/delete/"+id,{
+    method:"POST",
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  load();
+}
+
+load();
+</script>
 
 </body>
 </html>

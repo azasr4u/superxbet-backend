@@ -1,55 +1,173 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
+<meta charset="UTF-8">
+<title>KYC Panel</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  display:flex;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
+  color:white;
+}
+
+.sidebar {
+  width:240px;
+  height:100vh;
+  background: linear-gradient(180deg,#5f2c82,#49a09d);
+  padding:20px;
+}
+
+.menu a {
+  display:block;
+  padding:12px;
+  margin-bottom:8px;
+  color:white;
+  text-decoration:none;
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
+
+.main {
+  flex:1;
+  padding:30px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:rgba(255,255,255,0.1);
+}
+
+th, td {
+  padding:12px;
+  text-align:center;
+}
+
+th {
+  background:rgba(0,0,0,0.2);
+}
+
+.pending { color:yellow; }
+.approved { color:lime; }
+.rejected { color:red; }
+
+.btn {
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  margin:2px;
+  cursor:pointer;
+}
+
+.green { background:green; color:white; }
+.red { background:red; color:white; }
+
+img {
+  width:80px;
+  border-radius:6px;
+}
+</style>
 </head>
 
-<body onload="protect();applyRoleControl();loadKYCPage()">
+<body>
 
 <div class="sidebar">
   <h2>SuperXbet</h2>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="banking.html">Banking</a>
-  <a href="users.html">Users</a>
-  <a href="kyc.html">KYC</a>
 
-  <div class="admin-only">
-    <a href="odds.html">Odds</a>
-    <a href="revenue.html">Revenue</a>
-    <a href="referral.html">Referral</a>
-    <a href="agents.html">Agents</a>
-    <a href="settings.html">Settings</a>
-  </div>
+  <a href="/admin/dashboard.html">Dashboard</a>
+
+  <a href="/admin/deposits.html">Deposits</a>
+  <a href="/admin/withdraws.html">Withdraws</a>
+
+  <a href="/admin/kyc.html">KYC</a>
+  <a href="/admin/referral.html">Referral</a>
+
+  <a href="/admin/upi.html">UPI</a>
+  <a href="/admin/mqr.html">MQR</a>
+  <a href="/admin/bank.html">Bank</a>
+
+  <a href="/admin/agents.html">Agents</a>
+
+  <a href="/admin/score.html">Score Panel</a>
+  <a href="/admin/bets.html">Bets</a>
 </div>
 
 <div class="main">
+  <h2>KYC Requests</h2>
 
-<h2>KYC</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Document</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
 
-<div class="card">
-<table>
-<tbody id="kyc"></tbody>
-</table>
-</div>
-
+    <tbody id="data"></tbody>
+  </table>
 </div>
 
 <script>
+const token = localStorage.getItem("adminToken");
 
-async function loadKYCPage(){
+async function load(){
 
-const data = await loadKYC();
+  const res = await fetch("/api/admin/kyc",{
+    headers:{ Authorization:"Bearer "+token }
+  });
 
-kyc.innerHTML = data.map(k=>`
-<tr>
-<td>${k.userId?.phone}</td>
-<td>
-<button onclick="approveKYC('${k._id}')">Approve</button>
-</td>
-</tr>`).join("");
+  const data = await res.json();
 
+  let html = "";
+
+  data.forEach(k=>{
+
+    const status = (k.status || "").toLowerCase();
+
+    html += `
+      <tr>
+        <td>${k.userId?.phone}</td>
+        <td><img src="${k.document}" /></td>
+        <td class="${status}">${k.status}</td>
+        <td>
+          ${
+            status === "pending" ? `
+            <button class="btn green" onclick="approve('${k._id}')">Approve</button>
+            <button class="btn red" onclick="reject('${k._id}')">Reject</button>
+            ` : "-"
+          }
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("data").innerHTML = html;
 }
+
+async function approve(id){
+  await fetch("/api/admin/kyc/approve/"+id,{
+    method:"POST",
+    headers:{ Authorization:"Bearer "+token }
+  });
+  load();
+}
+
+async function reject(id){
+  await fetch("/api/admin/kyc/reject/"+id,{
+    method:"POST",
+    headers:{ Authorization:"Bearer "+token }
+  });
+  load();
+}
+
+load();
 </script>
 
 </body>

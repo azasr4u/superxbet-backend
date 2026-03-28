@@ -19,61 +19,36 @@ body {
   height:100vh;
   background: linear-gradient(180deg,#5f2c82,#49a09d);
   padding:20px;
+  position:fixed;
 }
 
-.sidebar h2 { margin-bottom:30px; }
+.sidebar h2 {
+  margin-bottom:20px;
+}
 
 .menu a {
   display:block;
   padding:12px;
-  margin-bottom:10px;
+  margin-bottom:8px;
   color:white;
   text-decoration:none;
-  border-radius:10px;
+  border-radius:8px;
+  transition:0.3s;
 }
 
-.active { background:rgba(255,255,255,0.3); }
+.menu a:hover {
+  background:rgba(255,255,255,0.2);
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
 
 /* MAIN */
 .main {
-  flex:1;
+  margin-left:240px;
+  width:100%;
   padding:30px;
-}
-
-/* TOPBAR */
-.topbar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:25px;
-}
-
-.logout {
-  padding:8px 16px;
-  border:none;
-  border-radius:8px;
-  background:#ff7e5f;
-  color:white;
-  cursor:pointer;
-}
-
-/* CARDS */
-.grid {
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:15px;
-  margin-bottom:25px;
-}
-
-.card {
-  padding:20px;
-  border-radius:12px;
-  background:rgba(255,255,255,0.15);
-}
-
-.value {
-  font-size:26px;
-  font-weight:bold;
 }
 
 /* TABLE */
@@ -84,186 +59,119 @@ table {
 }
 
 th, td {
-  padding:10px;
+  padding:12px;
   text-align:center;
 }
 
-th { background:rgba(0,0,0,0.2); }
-
-/* SECTION */
-.section {
-  margin-top:30px;
+th {
+  background:rgba(0,0,0,0.2);
 }
+
+/* BUTTONS */
+.btn {
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  margin:2px;
+  cursor:pointer;
+}
+
+.green { background:green; color:white; }
+.red { background:red; color:white; }
+.blue { background:#2196f3; color:white; }
+.orange { background:orange; color:white; }
 </style>
 </head>
 
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
   <h2>SuperXbet</h2>
+
   <div class="menu">
     <a class="active">Dashboard</a>
-    <a href="/admin/users.html">Users</a>
+
     <a href="/admin/deposits.html">Deposits</a>
     <a href="/admin/withdraws.html">Withdraws</a>
-    <a href="/admin/bets.html">Bets</a>
-    <a href="/admin/score.html">Score Panel</a>
+
+    <a href="/admin/kyc.html">KYC</a>
+    <a href="/admin/referral.html">Referral</a>
+
+    <a href="/admin/upi.html">UPI</a>
+    <a href="/admin/mqr.html">MQR</a>
+    <a href="/admin/bank.html">Bank Accounts</a>
+
     <a href="/admin/agents.html">Agents</a>
+    <a href="/admin/settings.html">Settings</a>
+
+    <a href="/admin/score.html">Score Panel</a>
+    <a href="/admin/bets.html">Bets</a>
   </div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
-
-<div class="topbar">
-  <h2>📊 Admin Dashboard</h2>
-  <button class="logout" onclick="logout()">Logout</button>
-</div>
-
-<!-- 🔥 STATS -->
-<div class="grid">
-  <div class="card">
-    Users
-    <div id="users" class="value">0</div>
-  </div>
-
-  <div class="card">
-    Deposits
-    <div id="dep" class="value">₹0</div>
-  </div>
-
-  <div class="card">
-    Withdraws
-    <div id="with" class="value">₹0</div>
-  </div>
-
-  <div class="card">
-    Profit
-    <div id="profit" class="value">₹0</div>
-  </div>
-</div>
-
-<!-- 🔥 USER TABLE -->
-<div class="section">
-  <h3>👤 Users</h3>
+  <h2>📊 Dashboard</h2>
 
   <table>
     <thead>
       <tr>
         <th>Phone</th>
         <th>Wallet</th>
+        <th>Deposits</th>
+        <th>Withdraws</th>
+        <th>Wager Left</th>
         <th>Bonus</th>
-        <th>Wager</th>
-        <th>Role</th>
+        <th>Actions</th>
       </tr>
     </thead>
-    <tbody id="usersTable"></tbody>
+
+    <tbody id="data"></tbody>
   </table>
-</div>
-
-<!-- 🔥 RECENT DEPOSITS -->
-<div class="section">
-  <h3>💰 Recent Deposits</h3>
-
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Amount</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="depositsTable"></tbody>
-  </table>
-</div>
-
-<!-- 🔥 RECENT WITHDRAW -->
-<div class="section">
-  <h3>🏧 Recent Withdraws</h3>
-
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Amount</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="withdrawTable"></tbody>
-  </table>
-</div>
-
 </div>
 
 <script>
-
 const token = localStorage.getItem("adminToken");
 
-if(!token){
-  window.location.href="/admin/login.html";
-}
-
-function logout(){
-  localStorage.removeItem("adminToken");
-  location.href="/admin/login.html";
+if (!token) {
+  window.location.href = "/admin/login.html";
 }
 
 async function load(){
 
-  const res = await fetch("/api/admin/dashboard",{
+  const res = await fetch("/api/admin/dashboard", {
     headers:{ Authorization:"Bearer "+token }
   });
 
   const d = await res.json();
 
-  // 🔥 STATS
-  users.innerText = d.totalUsers || 0;
-  dep.innerText = "₹" + (d.totalDeposits || 0);
-  withdraw.innerText = "₹" + (d.totalWithdraws || 0);
-  profit.innerText = "₹" + ((d.totalDeposits||0)-(d.totalWithdraws||0));
+  let html = "";
 
-  // 🔥 USERS
-  let uhtml="";
-  d.users?.forEach(u=>{
-    uhtml+=`
+  d.users.forEach(u => {
+
+    html += `
     <tr>
       <td>${u.phone}</td>
       <td>₹${u.wallet}</td>
-      <td>₹${u.bonus}</td>
+      <td>₹${u.totalDeposits}</td>
+      <td>₹${u.totalWithdraws}</td>
       <td>₹${u.wageringLeft}</td>
-      <td>${u.role}</td>
-    </tr>`;
+      <td>₹${u.bonus}</td>
+      <td>
+        <button class="btn green">+Balance</button>
+        <button class="btn blue">Bonus</button>
+        <button class="btn orange">Reject</button>
+        <button class="btn red">Block</button>
+      </td>
+    </tr>
+    `;
   });
-  usersTable.innerHTML=uhtml;
 
-  // 🔥 DEPOSITS
-  let dhtml="";
-  d.deposits?.forEach(x=>{
-    dhtml+=`
-    <tr>
-      <td>${x.userId}</td>
-      <td>₹${x.amount}</td>
-      <td>${x.status}</td>
-    </tr>`;
-  });
-  depositsTable.innerHTML=dhtml;
-
-  // 🔥 WITHDRAW
-  let whtml="";
-  d.withdraws?.forEach(x=>{
-    whtml+=`
-    <tr>
-      <td>${x.userId}</td>
-      <td>₹${x.amount}</td>
-      <td>${x.status}</td>
-    </tr>`;
-  });
-  withdrawTable.innerHTML=whtml;
-
+  document.getElementById("data").innerHTML = html;
 }
 
-setInterval(load,4000);
 load();
-
 </script>
 
 </body>

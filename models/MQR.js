@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const mqrSchema = new mongoose.Schema({
 
-  imageUrl: {
+  qrImage: {
     type: String,
     required: true
   },
@@ -19,6 +19,6 @@ const mqrSchema = new mongoose.Schema({
     default: true
   }
 
-});
+}, { timestamps: true });
 
 export default mongoose.model("MQR", mqrSchema);
