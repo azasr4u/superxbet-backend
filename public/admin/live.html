@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Live Control</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  display:flex;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
+  color:white;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:240px;
+  height:100vh;
+  background: linear-gradient(180deg,#5f2c82,#49a09d);
+  padding:20px;
+  position:fixed;
+}
+
+.menu a {
+  display:block;
+  padding:14px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
+  border-radius:10px;
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
+
+/* MAIN */
+.main {
+  margin-left:240px;
+  width:100%;
+  padding:40px;
+}
+
+/* GRID */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:25px;
+  max-width:800px;
+}
+
+/* CARD */
+.card {
+  padding:25px;
+  border-radius:15px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+.title {
+  font-size:14px;
+}
+
+.value {
+  font-size:30px;
+  font-weight:bold;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+  <div class="menu">
+    <a href="/admin/dashboard.html">Dashboard</a>
+    <a href="/admin/deposits.html">Deposits</a>
+    <a href="/admin/withdraws.html">Withdraws</a>
+    <a href="/admin/bets.html">Bets</a>
+    <a class="active">Live Control</a>
+  </div>
+</div>
+
+<div class="main">
+  <h2>🧠 Live Control Panel</h2>
+
+  <div class="grid">
+    <div class="card">
+      <div class="title">Users</div>
+      <div id="users" class="value">0</div>
+    </div>
+
+    <div class="card">
+      <div class="title">Active Bets</div>
+      <div id="bets" class="value">0</div>
+    </div>
+
+    <div class="card">
+      <div class="title">Deposits</div>
+      <div id="dep" class="value">₹0</div>
+    </div>
+
+    <div class="card">
+      <div class="title">Profit</div>
+      <div id="profit" class="value">₹0</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("adminToken");
+if (!token) window.location.href = "/admin/login.html";
+
+async function load(){
+  const res = await fetch("/api/admin/live-stats", {
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  const d = await res.json();
+
+  document.getElementById("users").innerText = d.users;
+  document.getElementById("bets").innerText = d.activeBets;
+  document.getElementById("dep").innerText = "₹"+d.deposits;
+  document.getElementById("profit").innerText = "₹"+d.profit;
+}
+
+setInterval(load,3000);
+load();
+</script>
+
+</body>
+</html>

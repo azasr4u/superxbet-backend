@@ -523,4 +523,43 @@ router.post("/bet/settle/:id", async (req, res) => {
   }
 });
 
+/* ============================
+   LIVE CONTROL STATS
+============================ */
+router.get("/live-stats", async (req, res) => {
+  try {
+
+    const totalUsers = await User.countDocuments();
+
+    const totalBets = await Bet.countDocuments({
+      status: "pending"
+    });
+
+    const totalDeposits = await Deposit.aggregate([
+      { $match: { status: "approved" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    const totalWithdraws = await Withdraw.aggregate([
+      { $match: { status: "approved" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    const deposits = totalDeposits[0]?.total || 0;
+    const withdraws = totalWithdraws[0]?.total || 0;
+
+    const profit = deposits - withdraws;
+
+    res.json({
+      users: totalUsers,
+      activeBets: totalBets,
+      deposits,
+      withdraws,
+      profit
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 export default router;
