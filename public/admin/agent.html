@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Agent Panel</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
+  color:white;
+  padding:20px;
+}
+
+/* TABLE */
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:rgba(255,255,255,0.1);
+}
+
+th, td {
+  padding:12px;
+  text-align:center;
+}
+
+th {
+  background:rgba(0,0,0,0.2);
+}
+
+button {
+  padding:6px 10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:green;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>👨‍💼 Agent Panel</h2>
+
+<table>
+<thead>
+<tr>
+<th>User</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="data"></tbody>
+</table>
+
+<script>
+const token = localStorage.getItem("adminToken");
+if (!token) window.location.href = "/admin/login.html";
+
+async function load(){
+
+  const res = await fetch("/api/admin/agent/users", {
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  const users = await res.json();
+
+  let html = "";
+
+  users.forEach(u=>{
+    html += `
+      <tr>
+        <td>${u.phone}</td>
+        <td>₹${u.balance}</td>
+        <td>
+          <button onclick="add('${u._id}')">Add Balance</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("data").innerHTML = html;
+}
+
+async function add(id){
+  const amount = prompt("Enter amount");
+
+  await fetch("/api/admin/bonus",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ userId:id, amount })
+  });
+
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>

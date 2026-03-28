@@ -640,4 +640,65 @@ router.post("/match/result", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/* ============================
+   CREATE AGENT
+============================ */
+router.post("/agent/create", async (req, res) => {
+  try {
+
+    const { phone, password } = req.body;
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const agent = new User({
+      phone,
+      password: hashed,
+      role: "agent"
+    });
+
+    await agent.save();
+
+    res.json({ message: "Agent created" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   ASSIGN USER TO AGENT
+============================ */
+router.post("/agent/assign", async (req, res) => {
+  try {
+
+    const { userId, agentId } = req.body;
+
+    const user = await User.findById(userId);
+    user.agentId = agentId;
+
+    await user.save();
+
+    res.json({ message: "Assigned" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+/* ============================
+   GET AGENT USERS
+============================ */
+router.get("/agent/users", async (req, res) => {
+  try {
+
+    const agentId = req.user.id;
+
+    const users = await User.find({ agentId });
+
+    res.json(users);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 export default router;
