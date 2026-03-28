@@ -347,5 +347,67 @@ router.post("/score/update", verifyToken, adminOrAgent, async (req, res) => {
 
   res.json({ match, odds });
 });
+import Deposit from "../models/Deposit.js";
+import User from "../models/User.js";
+
+/* ============================
+   GET ALL DEPOSITS
+============================ */
+router.get("/deposits", async (req, res) => {
+  try {
+    const data = await Deposit.find().sort({ createdAt: -1 });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   APPROVE DEPOSIT
+============================ */
+router.post("/deposit/approve/:id", async (req, res) => {
+  try {
+    const dep = await Deposit.findById(req.params.id);
+
+    if (!dep) return res.status(404).json({ error: "Not found" });
+    if (dep.status !== "pending")
+      return res.json({ message: "Already processed" });
+
+    // update status
+    dep.status = "approved";
+    await dep.save();
+
+    // update user wallet
+    const user = await User.findById(dep.userId);
+    user.balance += dep.amount;
+    await user.save();
+
+    res.json({ message: "Deposit approved" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   REJECT DEPOSIT
+============================ */
+router.post("/deposit/reject/:id", async (req, res) => {
+  try {
+    const dep = await Deposit.findById(req.params.id);
+
+    if (!dep) return res.status(404).json({ error: "Not found" });
+    if (dep.status !== "pending")
+      return res.json({ message: "Already processed" });
+
+    dep.status = "rejected";
+    await dep.save();
+
+    res.json({ message: "Deposit rejected" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
