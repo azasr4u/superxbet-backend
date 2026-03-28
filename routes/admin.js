@@ -347,8 +347,6 @@ router.post("/score/update", verifyToken, adminOrAgent, async (req, res) => {
 
   res.json({ match, odds });
 });
-import Deposit from "../models/Deposit.js";
-import User from "../models/User.js";
 
 /* ============================
    GET ALL DEPOSITS
@@ -410,4 +408,69 @@ router.post("/deposit/reject/:id", async (req, res) => {
   }
 });
 
+/* ============================
+   GET ALL WITHDRAWS
+============================ */
+router.get("/withdraws", async (req, res) => {
+  try {
+    const data = await Withdraw.find().sort({ createdAt: -1 });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   APPROVE WITHDRAW
+============================ */
+router.post("/withdraw/approve/:id", async (req, res) => {
+  try {
+    const wd = await Withdraw.findById(req.params.id);
+
+    if (!wd) return res.status(404).json({ error: "Not found" });
+    if (wd.status !== "pending")
+      return res.json({ message: "Already processed" });
+
+    const user = await User.findById(wd.userId);
+
+    // safety check
+    if (user.balance < wd.amount) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    // deduct balance
+    user.balance -= wd.amount;
+    await user.save();
+
+    // update status
+    wd.status = "approved";
+    await wd.save();
+
+    res.json({ message: "Withdraw approved" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   REJECT WITHDRAW
+============================ */
+router.post("/withdraw/reject/:id", async (req, res) => {
+  try {
+    const wd = await Withdraw.findById(req.params.id);
+
+    if (!wd) return res.status(404).json({ error: "Not found" });
+    if (wd.status !== "pending")
+      return res.json({ message: "Already processed" });
+
+    wd.status = "rejected";
+    await wd.save();
+
+    res.json({ message: "Withdraw rejected" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 export default router;

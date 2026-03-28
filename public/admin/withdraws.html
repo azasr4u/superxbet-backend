@@ -1,88 +1,166 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Withdraws</title>
 
 <style>
 body {
+  margin:0;
   font-family:Segoe UI;
-  background: linear-gradient(135deg,#ff7e5f,#feb47b);
+  display:flex;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
   color:white;
-  padding:20px;
 }
 
+/* SIDEBAR */
+.sidebar {
+  width:240px;
+  height:100vh;
+  background: linear-gradient(180deg,#5f2c82,#49a09d);
+  padding:20px;
+  position:fixed;
+}
+
+.menu a {
+  display:block;
+  padding:14px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
+  border-radius:10px;
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
+
+/* MAIN */
+.main {
+  margin-left:240px;
+  width:100%;
+  padding:40px;
+}
+
+/* TABLE */
 table {
   width:100%;
-  background: rgba(255,255,255,0.1);
+  border-collapse:collapse;
+  background:rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius:10px;
+  overflow:hidden;
 }
 
-th,td { padding:12px; }
+th, td {
+  padding:15px;
+  text-align:center;
+}
 
-button {
-  background:red;
+th {
+  background:rgba(0,0,0,0.2);
+}
+
+/* STATUS COLORS */
+.pending { color:yellow; }
+.approved { color:lime; }
+.rejected { color:red; }
+
+/* BUTTONS */
+.btn {
+  padding:6px 12px;
   border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  color:white;
+  border-radius:8px;
+  cursor:pointer;
+  margin:2px;
 }
+
+.approve { background:green; color:white; }
+.reject { background:red; color:white; }
 </style>
 </head>
 
 <body>
 
-<h2>💸 Withdraws</h2>
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+  <div class="menu">
+    <a href="/admin/dashboard.html">Dashboard</a>
+    <a href="/admin/deposits.html">Deposits</a>
+    <a class="active">Withdraws</a>
+    <a href="/admin/users.html">Users</a>
+    <a href="/admin/bets.html">Bets</a>
+  </div>
+</div>
 
-<table>
-<thead>
-<tr>
-<th>User</th>
-<th>Amount</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
+<div class="main">
+  <h2>💸 Withdraw Requests</h2>
 
-<tbody id="table"></tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody id="data"></tbody>
+  </table>
+</div>
 
 <script>
-
 const token = localStorage.getItem("adminToken");
+if (!token) window.location.href = "/admin/login.html";
 
 async function load(){
-  const res = await fetch("/api/admin/withdraws",{
-    headers:{Authorization:"Bearer "+token}
+  const res = await fetch("/api/admin/withdraws", {
+    headers:{ Authorization:"Bearer "+token }
   });
 
   const data = await res.json();
-  const table = document.getElementById("table");
-  table.innerHTML="";
+
+  let html = "";
 
   data.forEach(w=>{
-    table.innerHTML += `
-    <tr>
-      <td>${w.userId?.phone}</td>
-      <td>₹${w.amount}</td>
-      <td>${w.status}</td>
-      <td>
-        ${w.status==="Pending" ? 
-        `<button onclick="approve('${w._id}')">Approve</button>` 
-        : "Done"}
-      </td>
-    </tr>`;
+    html += `
+      <tr>
+        <td>${w.userId}</td>
+        <td>₹${w.amount}</td>
+        <td class="${w.status}">${w.status}</td>
+        <td>
+          ${
+            w.status === "pending" ? `
+            <button class="btn approve" onclick="approve('${w._id}')">Approve</button>
+            <button class="btn reject" onclick="reject('${w._id}')">Reject</button>
+            ` : "-"
+          }
+        </td>
+      </tr>
+    `;
   });
+
+  document.getElementById("data").innerHTML = html;
 }
 
 async function approve(id){
   await fetch("/api/admin/withdraw/approve/"+id,{
     method:"POST",
-    headers:{Authorization:"Bearer "+token}
+    headers:{ Authorization:"Bearer "+token }
+  });
+  load();
+}
+
+async function reject(id){
+  await fetch("/api/admin/withdraw/reject/"+id,{
+    method:"POST",
+    headers:{ Authorization:"Bearer "+token }
   });
   load();
 }
 
 load();
-
 </script>
 
 </body>
