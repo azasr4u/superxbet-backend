@@ -473,4 +473,54 @@ router.post("/withdraw/reject/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/* ============================
+   GET ALL BETS
+============================ */
+router.get("/bets", async (req, res) => {
+  try {
+    const bets = await Bet.find().sort({ createdAt: -1 });
+    res.json(bets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   SETTLE BET
+============================ */
+router.post("/bet/settle/:id", async (req, res) => {
+  try {
+    const { result } = req.body; // win or lose
+
+    const bet = await Bet.findById(req.params.id);
+    if (!bet) return res.status(404).json({ error: "Bet not found" });
+
+    if (bet.status !== "pending") {
+      return res.json({ message: "Already settled" });
+    }
+
+    const user = await User.findById(bet.userId);
+
+    if (result === "win") {
+      const winAmount = bet.stake * bet.odds;
+
+      user.balance += winAmount;
+      bet.status = "won";
+      bet.winAmount = winAmount;
+    } else {
+      bet.status = "lost";
+      bet.winAmount = 0;
+    }
+
+    await user.save();
+    await bet.save();
+
+    res.json({ message: "Bet settled" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

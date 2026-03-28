@@ -1,106 +1,164 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Bets</title>
 
 <style>
 body {
+  margin:0;
   font-family:Segoe UI;
-  background: linear-gradient(135deg,#43cea2,#185a9d);
+  display:flex;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
   color:white;
-  padding:20px;
 }
 
-table {
-  width:100%;
-  border-collapse:collapse;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
+/* SIDEBAR */
+.sidebar {
+  width:240px;
+  height:100vh;
+  background: linear-gradient(180deg,#5f2c82,#49a09d);
+  padding:20px;
+  position:fixed;
+}
+
+.menu a {
+  display:block;
+  padding:14px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
   border-radius:10px;
 }
 
-th,td { padding:12px; }
-
-button {
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  color:white;
+.active {
+  background:rgba(255,255,255,0.3);
 }
 
-.win { background:green; }
-.loss { background:red; }
-.void { background:gray; }
+/* MAIN */
+.main {
+  margin-left:240px;
+  width:100%;
+  padding:40px;
+}
+
+/* TABLE */
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius:10px;
+  overflow:hidden;
+}
+
+th, td {
+  padding:12px;
+  text-align:center;
+}
+
+th {
+  background:rgba(0,0,0,0.2);
+}
+
+/* STATUS */
+.pending { color:yellow; }
+.won { color:lime; }
+.lost { color:red; }
+
+/* BUTTONS */
+.btn {
+  padding:6px 10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  margin:2px;
+}
+
+.win { background:green; color:white; }
+.lose { background:red; color:white; }
 </style>
 </head>
 
 <body>
 
-<h2>🎯 Bets</h2>
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+  <div class="menu">
+    <a href="/admin/dashboard.html">Dashboard</a>
+    <a href="/admin/deposits.html">Deposits</a>
+    <a href="/admin/withdraws.html">Withdraws</a>
+    <a class="active">Bets</a>
+  </div>
+</div>
 
-<table>
-<thead>
-<tr>
-<th>User</th>
-<th>Match</th>
-<th>Type</th>
-<th>Selection</th>
-<th>Stake</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
+<div class="main">
+  <h2>🎯 Bets Control</h2>
 
-<tbody id="table"></tbody>
-</table>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Match</th>
+        <th>Selection</th>
+        <th>Stake</th>
+        <th>Odds</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody id="data"></tbody>
+  </table>
+</div>
 
 <script>
-
 const token = localStorage.getItem("adminToken");
+if (!token) window.location.href = "/admin/login.html";
 
 async function load(){
   const res = await fetch("/api/admin/bets", {
-    headers:{Authorization:"Bearer "+token}
+    headers:{ Authorization:"Bearer "+token }
   });
 
   const data = await res.json();
-  const table = document.getElementById("table");
-  table.innerHTML = "";
+
+  let html = "";
 
   data.forEach(b=>{
-
-    let sel = b.type==="single"
-      ? b.selection
-      : Object.entries(b.selections||{}).map(([k,v])=>k+":"+v).join("<br>");
-
-    table.innerHTML += `
-    <tr>
-      <td>${b.userId?.phone}</td>
-      <td>${b.match}</td>
-      <td>${b.type}</td>
-      <td>${sel}</td>
-      <td>₹${b.stake}</td>
-      <td>${b.status}</td>
-      <td>
-        ${b.status==="pending" ? `
-          <button class="win" onclick="set('${b._id}','won')">WIN</button>
-          <button class="loss" onclick="set('${b._id}','lost')">LOSS</button>
-          <button class="void" onclick="set('${b._id}','void')">VOID</button>
-        ` : "Done"}
-      </td>
-    </tr>`;
+    html += `
+      <tr>
+        <td>${b.userId}</td>
+        <td>${b.match}</td>
+        <td>${b.selection}</td>
+        <td>₹${b.stake}</td>
+        <td>${b.odds}</td>
+        <td class="${b.status}">${b.status}</td>
+        <td>
+          ${
+            b.status === "pending" ? `
+            <button class="btn win" onclick="settle('${b._id}','win')">Win</button>
+            <button class="btn lose" onclick="settle('${b._id}','lose')">Lose</button>
+            ` : "-"
+          }
+        </td>
+      </tr>
+    `;
   });
+
+  document.getElementById("data").innerHTML = html;
 }
 
-async function set(id,result){
-  await fetch("/api/admin/bet/settle",{
+async function settle(id,result){
+  await fetch("/api/admin/bet/settle/"+id,{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       Authorization:"Bearer "+token
     },
-    body:JSON.stringify({ betId:id,result })
+    body: JSON.stringify({ result })
   });
+
   load();
 }
 
