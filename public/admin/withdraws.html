@@ -13,7 +13,6 @@ body {
   color:white;
 }
 
-/* SIDEBAR */
 .sidebar {
   width:240px;
   height:100vh;
@@ -35,14 +34,12 @@ body {
   background:rgba(255,255,255,0.3);
 }
 
-/* MAIN */
 .main {
   margin-left:240px;
   width:100%;
   padding:40px;
 }
 
-/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
@@ -61,12 +58,10 @@ th {
   background:rgba(0,0,0,0.2);
 }
 
-/* STATUS COLORS */
 .pending { color:yellow; }
 .approved { color:lime; }
 .rejected { color:red; }
 
-/* BUTTONS */
 .btn {
   padding:6px 12px;
   border:none;
@@ -112,7 +107,10 @@ th {
 
 <script>
 const token = localStorage.getItem("adminToken");
-if (!token) window.location.href = "/admin/login.html";
+
+if (!token) {
+  window.location.href = "/admin/login.html";
+}
 
 async function load(){
   const res = await fetch("/api/admin/withdraws", {
@@ -124,14 +122,16 @@ async function load(){
   let html = "";
 
   data.forEach(w=>{
+    const status = (w.status || "").toLowerCase();
+
     html += `
       <tr>
         <td>${w.userId?.phone || "N/A"}</td>
         <td>₹${w.amount}</td>
-        <td class="${w.status.toLowerCase()}">${w.status}</td>
+        <td class="${status}">${w.status}</td>
         <td>
           ${
-            w.status === "Pending" ? `
+            status === "pending" ? `
             <button class="btn approve" onclick="approve('${w._id}')">Approve</button>
             <button class="btn reject" onclick="reject('${w._id}')">Reject</button>
             ` : "-"
@@ -145,18 +145,26 @@ async function load(){
 }
 
 async function approve(id){
+  if (!confirm("Approve?")) return;
+
   await fetch("/api/admin/withdraw/approve/"+id,{
     method:"POST",
     headers:{ Authorization:"Bearer "+token }
   });
+
+  alert("Approved");
   load();
 }
 
 async function reject(id){
+  if (!confirm("Reject?")) return;
+
   await fetch("/api/admin/withdraw/reject/"+id,{
     method:"POST",
     headers:{ Authorization:"Bearer "+token }
   });
+
+  alert("Rejected & refunded");
   load();
 }
 

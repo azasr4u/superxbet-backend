@@ -12,7 +12,6 @@ import Match from "../models/Match.js";
 import Bet from "../models/Bet.js";
 import LiveOdds from "../models/LiveOdds.js";
 import KYC from "../models/KYC.js";
-import UPI from "../models/UPI.js";
 import MQR from "../models/MQR.js";
 import Bank from "../models/BankAccount.js";
 
@@ -186,28 +185,71 @@ router.post("/deposit/reject/:id", verifyToken, adminOnly, async (req, res) => {
 
 
 // ================= WITHDRAW =================
+// ================= WITHDRAW =================
+
+// GET WITHDRAWS
 router.get("/withdraws", verifyToken, adminOrAgent, async (req, res) => {
-  const data = await Withdraw.find()
-    .populate("userId", "phone")
-    .sort({ createdAt: -1 });
+  try {
+    const data = await Withdraw.find()
+      .populate("userId", "phone")
+      .sort({ createdAt: -1 });
 
-  res.json(data);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+
+// APPROVE
 router.post("/withdraw/approve/:id", verifyToken, adminOnly, async (req, res) => {
-  const wd = await Withdraw.findById(req.params.id);
-  wd.status = "Approved";
-  await wd.save();
-  res.json({ success: true });
+  try {
+    const wd = await Withdraw.findById(req.params.id);
+
+    if (!wd) return res.status(404).json({ error: "Not found" });
+
+    if (wd.status !== "Pending") {
+      return res.json({ message: "Already processed" });
+    }
+
+    wd.status = "Approved";
+    await wd.save();
+
+    res.json({ success: true });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+
+// REJECT + REFUND
 router.post("/withdraw/reject/:id", verifyToken, adminOnly, async (req, res) => {
-  const wd = await Withdraw.findById(req.params.id);
-  wd.status = "Rejected";
-  await wd.save();
-  res.json({ success: true });
-});
+  try {
+    const wd = await Withdraw.findById(req.params.id);
 
+    if (!wd) return res.status(404).json({ error: "Not found" });
+
+    if (wd.status !== "Pending") {
+      return res.json({ message: "Already processed" });
+    }
+
+    const user = await User.findById(wd.userId);
+
+    if (user) {
+      user.walletBalance += wd.amount;
+      await user.save();
+    }
+
+    wd.status = "Rejected";
+    await wd.save();
+
+    res.json({ success: true });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ================= MATCH =================
 router.post("/match/update-with-odds", verifyToken, adminOnly, async (req, res) => {
