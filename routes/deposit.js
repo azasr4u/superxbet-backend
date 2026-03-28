@@ -23,8 +23,8 @@ router.post("/", async (req, res) => {
 
     // 🔁 RESET IF ALL USED
     if (!upi) {
-      await Upi.updateMany({}, { $set: { usedBy: [] } });
-      upi = await Upi.findOne({ active: true });
+      await UPI.updateMany({}, { $set: { usedBy: [] } });
+      upi = await UPI.findOne({ active: true });
     }
 
     if (upi) {
@@ -44,8 +44,8 @@ router.post("/", async (req, res) => {
       });
 
       if (!mqr) {
-        await Mqr.updateMany({}, { $set: { usedBy: [] } });
-        mqr = await Mqr.findOne({ active: true });
+        await MQR.updateMany({}, { $set: { usedBy: [] } });
+        mqr = await MQR.findOne({ active: true });
       }
 
       if (mqr) {
