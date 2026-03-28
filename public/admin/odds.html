@@ -1,61 +1,159 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Match Control</title>
 
 <style>
 body {
+  margin:0;
   font-family:Segoe UI;
-  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  display:flex;
+  background: linear-gradient(135deg,#4facfe,#8f94fb);
   color:white;
-  padding:20px;
 }
 
+/* SIDEBAR */
+.sidebar {
+  width:240px;
+  height:100vh;
+  background: linear-gradient(180deg,#5f2c82,#49a09d);
+  padding:20px;
+  position:fixed;
+}
+
+.menu a {
+  display:block;
+  padding:14px;
+  margin-bottom:10px;
+  color:white;
+  text-decoration:none;
+  border-radius:10px;
+}
+
+.active {
+  background:rgba(255,255,255,0.3);
+}
+
+/* MAIN */
+.main {
+  margin-left:240px;
+  padding:40px;
+}
+
+/* CARD */
+.card {
+  background:rgba(255,255,255,0.15);
+  padding:25px;
+  border-radius:15px;
+  backdrop-filter: blur(12px);
+  max-width:500px;
+}
+
+/* INPUT */
+input {
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:none;
+  border-radius:8px;
+}
+
+/* BUTTON */
 button {
   padding:10px;
-  margin:5px;
+  margin-top:10px;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
+  background:linear-gradient(135deg,#ff7e5f,#feb47b);
+  color:white;
 }
 </style>
 </head>
 
 <body>
 
-<h2>🎮 Match Control</h2>
-
-<div>
-  <button onclick="send(1)">1</button>
-  <button onclick="send(2)">2</button>
-  <button onclick="send(4)">4</button>
-  <button onclick="send(6)">6</button>
-  <button onclick="send('wicket')">Wicket</button>
+<div class="sidebar">
+  <h2>SuperXbet</h2>
+  <div class="menu">
+    <a href="/admin/dashboard.html">Dashboard</a>
+    <a href="/admin/deposits.html">Deposits</a>
+    <a href="/admin/withdraws.html">Withdraws</a>
+    <a href="/admin/bets.html">Bets</a>
+    <a class="active">Match Control</a>
+  </div>
 </div>
 
-<h3 id="score"></h3>
-<h3 id="odds"></h3>
+<div class="main">
+  <h2>🎮 Match Control</h2>
+
+  <div class="card">
+    <input id="match" placeholder="Match Name">
+    <input id="teamA" placeholder="Team A">
+    <input id="teamB" placeholder="Team B">
+    <input id="oddsA" placeholder="Odds Team A">
+    <input id="oddsB" placeholder="Odds Team B">
+
+    <button onclick="save()">Save Match</button>
+    <button onclick="result()">Set Result</button>
+  </div>
+</div>
 
 <script>
-
 const token = localStorage.getItem("adminToken");
+if (!token) window.location.href = "/admin/login.html";
 
-async function send(action){
-  const res = await fetch("/api/admin/score/update",{
+async function load(){
+  const res = await fetch("/api/admin/match/current", {
+    headers:{ Authorization:"Bearer "+token }
+  });
+
+  const d = await res.json();
+
+  if(d){
+    match.value = d.match;
+    teamA.value = d.teamA;
+    teamB.value = d.teamB;
+    oddsA.value = d.oddsA;
+    oddsB.value = d.oddsB;
+  }
+}
+
+async function save(){
+  await fetch("/api/admin/match/control",{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       Authorization:"Bearer "+token
     },
-    body:JSON.stringify({action})
+    body: JSON.stringify({
+      match:match.value,
+      teamA:teamA.value,
+      teamB:teamB.value,
+      oddsA:oddsA.value,
+      oddsB:oddsB.value
+    })
   });
-
-  const d = await res.json();
-
-  score.innerText = `Score: ${d.match.score}/${d.match.wickets}`;
-  odds.innerText = `Odds: ${d.odds.teamA} / ${d.odds.teamB}`;
+  alert("Updated");
 }
 
+async function result(){
+  const winner = prompt("Enter winner team");
+
+  await fetch("/api/admin/match/result",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body: JSON.stringify({ winner })
+  });
+
+  alert("Match settled");
+}
+
+load();
 </script>
 
 </body>

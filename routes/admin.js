@@ -562,4 +562,82 @@ router.get("/live-stats", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/* ============================
+   CREATE / UPDATE MATCH + ODDS
+============================ */
+router.post("/match/control", async (req, res) => {
+  try {
+
+    const { match, teamA, teamB, oddsA, oddsB } = req.body;
+
+    let data = await LiveOdds.findOne();
+
+    if (!data) {
+      data = new LiveOdds({
+        match,
+        teamA,
+        teamB,
+        oddsA,
+        oddsB
+      });
+    } else {
+      data.match = match;
+      data.teamA = teamA;
+      data.teamB = teamB;
+      data.oddsA = oddsA;
+      data.oddsB = oddsB;
+    }
+
+    await data.save();
+
+    res.json({ message: "Match updated" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+/* ============================
+   GET CURRENT MATCH
+============================ */
+router.get("/match/current", async (req, res) => {
+  const data = await LiveOdds.findOne();
+  res.json(data);
+});
+
+
+/* ============================
+   SET MATCH RESULT (AUTO SETTLE)
+============================ */
+router.post("/match/result", async (req, res) => {
+  try {
+
+    const { winner } = req.body;
+
+    const bets = await Bet.find({ status: "pending" });
+
+    for (let bet of bets) {
+
+      const user = await User.findById(bet.userId);
+
+      if (bet.selection === winner) {
+        const winAmount = bet.stake * bet.odds;
+        user.balance += winAmount;
+        bet.status = "won";
+      } else {
+        bet.status = "lost";
+      }
+
+      await user.save();
+      await bet.save();
+    }
+
+    res.json({ message: "Match settled" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 export default router;
