@@ -16,6 +16,9 @@ import oddsRoutes from "./routes/odds.js";
 import userRoutes from "./routes/user.js";
 import paymentRoutes from "./routes/payment.js";
 import agentRoutes from "./routes/agent.js";
+import matchRoutes from "./routes/match.js";
+
+
 
 // ❌ REMOVE THIS OR MERGE INTO adminRoutes
 // import adminBanking from "./routes/adminBanking.js";
@@ -52,6 +55,7 @@ app.use("/api/bet", betRoutes);
 app.use("/api/odds", oddsRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/match", matchRoutes);
 app.use("/api/agent", agentRoutes);
 
 // ✅ TEST ROUTE
