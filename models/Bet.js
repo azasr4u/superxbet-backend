@@ -12,7 +12,7 @@ const betSchema = new mongoose.Schema({
   /// 🔥 TYPE
   type: {
     type: String,
-    enum: ["single", "builder"],
+   enum: ["single", "builder", "guess"],
     required: true
   },
 

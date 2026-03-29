@@ -2,10 +2,20 @@ import mongoose from "mongoose";
 
 const matchSchema = new mongoose.Schema({
 
-  matchName: String,
+  matchName: {
+    type: String,
+    default: ""
+  },
 
-  teamA: String,
-  teamB: String,
+  teamA: {
+    type: String,
+    default: ""
+  },
+
+  teamB: {
+    type: String,
+    default: ""
+  },
 
   score: {
     type: Number,
@@ -37,12 +47,13 @@ const matchSchema = new mongoose.Schema({
     default: 0
   },
 
-  /// 🔥 ADD THIS
+  // 🏆 RESULT
   result: {
     type: String,
-    default: null
+    default: ""
   },
 
+  // 🔴 LIVE / ENDED
   isLive: {
     type: Boolean,
     default: true

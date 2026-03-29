@@ -1,23 +1,14 @@
 import express from "express";
+import Match from "../models/Match.js"; // ✅ FIXED
 
 const router = express.Router();
 
-// 🏏 Match state (mock score engine for now)
-let matchState = {
-  teamA: "RCB",
-  teamB: "SRH",
-  scoreA: 85,
-  scoreB: 0,
-  wicketsA: 2,
-  overs: 10.2
-};
-
-// 🎯 ODDS ENGINE (simple logic now, upgrade later)
-function calculateOdds() {
+// 🎯 ODDS ENGINE (KEEP SAME LOGIC)
+function calculateOdds(match) {
   const base = 1.9;
 
-  const performanceFactor =
-    matchState.scoreA / (matchState.overs * 6);
+  const overs = match.overs || 1;
+  const performanceFactor = match.score / (overs * 6);
 
   let oddsA = base - performanceFactor * 0.2;
   let oddsB = base + performanceFactor * 0.2;
@@ -60,15 +51,56 @@ function calculateOdds() {
   };
 }
 
-// 🔁 LIVE ODDS API
-router.get("/live", (req, res) => {
-  const odds = calculateOdds();
+// 🔁 LIVE ODDS API (FINAL)
+router.get("/live", async (req, res) => {
+  try {
 
-  res.json({
-    match: matchState,
-    odds,
-    lastUpdate: new Date()
-  });
+    // 🔥 GET LIVE MATCH FIRST
+    let match = await Match.findOne({ isLive: true });
+
+    // 🔁 IF NO LIVE MATCH → GET LAST MATCH
+    if (!match) {
+      match = await Match.findOne().sort({ updatedAt: -1 });
+    }
+
+    if (!match) {
+      return res.json({
+        match: null,
+        odds: null
+      });
+    }
+
+    // ✅ MAP TO FLUTTER FORMAT
+    const matchData = {
+      teamA: match.teamA || "Team A",
+      teamB: match.teamB || "Team B",
+      scoreA: match.score || 0,
+      wicketsA: match.wickets || 0,
+      overs: match.overs || 0,
+      result: match.result || "",
+      status: match.isLive ? "LIVE" : "ENDED"
+    };
+
+    // 🔴 MATCH ENDED
+    if (!match.isLive) {
+      return res.json({
+        match: matchData,
+        odds: null
+      });
+    }
+
+    // 🟢 LIVE MATCH
+    const odds = calculateOdds(match);
+
+    res.json({
+      match: matchData,
+      odds,
+      lastUpdate: new Date()
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
