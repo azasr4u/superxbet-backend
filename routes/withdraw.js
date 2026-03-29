@@ -7,21 +7,26 @@ const router = express.Router();
 
 router.post("/", verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id; // ✅ FIXED (matches token)
-    const { amount } = req.body;
+    const userId = req.user.id;
+
+    // ✅ FIXED: accept full data
+    const { amount, method, details } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
+    // ✅ FIXED: validate details (minimal)
+    if (!details || !details.upiId) {
+      return res.status(400).json({ error: "UPI ID required" });
+    }
+
     const user = await User.findById(userId);
 
-    // ✅ CRITICAL FIX (NO CRASH)
     if (!user) {
       return res.status(400).json({ error: "User not found" });
     }
 
-    // 🔒 SAFE ACCESS
     if ((user.wageringRequired || 0) > 0) {
       return res.status(400).json({
         error: `Complete wager ₹${user.wageringRequired}`
@@ -32,12 +37,16 @@ router.post("/", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
+    // ✅ deduct balance
     user.walletBalance -= amount;
     await user.save();
 
+    // ✅ FIXED: save method + details
     const withdraw = await Withdraw.create({
       user: userId,
       amount,
+      method,
+      details,
       status: "pending"
     });
 

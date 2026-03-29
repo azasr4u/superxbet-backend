@@ -3,41 +3,45 @@ import Deposit from "../models/Deposit.js";
 import UPI from "../models/UPI.js";
 import MQR from "../models/MQR.js";
 import Bank from "../models/BankAccount.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-
 // ================= CREATE DEPOSIT =================
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   try {
-    const { userId, amount } = req.body;
 
-    let paymentMethod = null;
+    const userId = req.user.id;
+    const { amount, method, utr } = req.body;
+
+    if (!amount || amount < 1) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    let paymentMethod = method?.toUpperCase();
     let paymentValue = null;
 
     // ================= UPI =================
-    let upi = await UPI.findOne({
-      active: true,
-      usedBy: { $nin: [userId] }   // ✅ FIXED
-    });
+    if (paymentMethod === "UPI") {
+      let upi = await UPI.findOne({
+        active: true,
+        usedBy: { $nin: [userId] }
+      });
 
-    // 🔁 RESET IF ALL USED
-    if (!upi) {
-      await UPI.updateMany({}, { $set: { usedBy: [] } });
+      if (!upi) {
+        await UPI.updateMany({}, { $set: { usedBy: [] } });
+        upi = await UPI.findOne({ active: true });
+      }
 
-      upi = await UPI.findOne({ active: true });
-    }
-
-    if (upi) {
-      paymentMethod = "UPI";
-      paymentValue = upi.upiId;
-
-      upi.usedBy.push(userId);
-      await upi.save();
+      if (upi) {
+        paymentValue = upi.upiId;
+        upi.usedBy.push(userId);
+        await upi.save();
+      }
     }
 
     // ================= MQR =================
-    if (!paymentValue) {
+    if (paymentMethod === "MQR") {
       let mqr = await MQR.findOne({
         active: true,
         usedBy: { $nin: [userId] }
@@ -49,16 +53,14 @@ router.post("/", async (req, res) => {
       }
 
       if (mqr) {
-        paymentMethod = "MQR";
         paymentValue = mqr.qrImage;
-
         mqr.usedBy.push(userId);
         await mqr.save();
       }
     }
 
     // ================= BANK =================
-    if (!paymentValue) {
+    if (paymentMethod === "BANK") {
       let bank = await Bank.findOne({
         active: true,
         usedBy: { $nin: [userId] }
@@ -70,7 +72,6 @@ router.post("/", async (req, res) => {
       }
 
       if (bank) {
-        paymentMethod = "BANK";
         paymentValue = JSON.stringify({
           bankName: bank.bankName,
           accountNumber: bank.accountNumber,
@@ -83,19 +84,18 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // ================= SAFETY =================
     if (!paymentValue) {
       return res.status(400).json({
-        error: "No payment methods available"
+        error: "No payment method available"
       });
     }
 
-    // ================= CREATE DEPOSIT =================
+    // ✅ FIXED MODEL MAPPING
     const deposit = new Deposit({
       userId,
       amount,
-      paymentMethod,
-      paymentValue,
+      method: paymentMethod,
+      utr,
       status: "Pending"
     });
 
@@ -103,12 +103,11 @@ router.post("/", async (req, res) => {
 
     res.json({
       message: "Deposit request submitted",
-      deposit,
-      paymentMethod,
-      paymentValue
+      deposit
     });
 
   } catch (err) {
+    console.log("DEPOSIT ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });

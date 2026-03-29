@@ -81,9 +81,8 @@ th {
   <h2>SuperXbet</h2>
 
   <a href="/admin/dashboard.html">Dashboard</a>
-
   <a href="/admin/deposits.html">Deposits</a>
-  <a href="/admin/withdraws.html">Withdraws</a>
+  <a href="/admin/withdraws.html" class="active">Withdraws</a>
 
   <a href="/admin/kyc.html">KYC</a>
   <a href="/admin/referral.html">Referral</a>
@@ -106,6 +105,7 @@ th {
       <tr>
         <th>User</th>
         <th>Amount</th>
+        <th>Details</th>
         <th>Status</th>
         <th>Action</th>
       </tr>
@@ -123,59 +123,96 @@ if (!token) {
 }
 
 async function load(){
-  const res = await fetch("/api/admin/withdraws", {
-    headers:{ Authorization:"Bearer "+token }
-  });
+  try {
+    const res = await fetch("/api/admin/withdraws", {
+      headers:{
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json"
+      }
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  let html = "";
+    if (!Array.isArray(data)) {
+      alert("Failed to load withdraws");
+      return;
+    }
 
-  data.forEach(w=>{
-    const status = (w.status || "").toLowerCase();
+    let html = "";
 
-    html += `
-      <tr>
-        <td>${w.userId?.phone || "N/A"}</td>
-        <td>₹${w.amount}</td>
-        <td class="${status}">${w.status}</td>
-        <td>
-          ${
-            status === "pending" ? `
-            <button class="btn approve" onclick="approve('${w._id}')">Approve</button>
-            <button class="btn reject" onclick="reject('${w._id}')">Reject</button>
-            ` : "-"
-          }
-        </td>
-      </tr>
-    `;
-  });
+    data.forEach(w=>{
+      const status = (w.status || "").toLowerCase();
 
-  document.getElementById("data").innerHTML = html;
+      const details = w.details?.upiId || "N/A";
+
+      html += `
+        <tr>
+          <td>${w.user?.phone || "N/A"}</td>
+          <td>₹${w.amount}</td>
+          <td>${details}</td>
+          <td class="${status}">${w.status}</td>
+          <td>
+            ${
+              status === "pending" ? `
+              <button class="btn approve" onclick="approve('${w._id}')">Approve</button>
+              <button class="btn reject" onclick="reject('${w._id}')">Reject</button>
+              ` : "-"
+            }
+          </td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("data").innerHTML = html;
+
+  } catch (e) {
+    alert("Error loading data");
+    console.error(e);
+  }
 }
 
 async function approve(id){
   if (!confirm("Approve?")) return;
 
-  await fetch("/api/admin/withdraw/approve/"+id,{
-    method:"POST",
-    headers:{ Authorization:"Bearer "+token }
-  });
+  try {
+    const res = await fetch("/api/admin/withdraw/approve/"+id,{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json"
+      }
+    });
 
-  alert("Approved");
-  load();
+    const data = await res.json();
+
+    alert(data.message || "Approved");
+    load();
+
+  } catch (e) {
+    alert("Approve failed");
+  }
 }
 
 async function reject(id){
   if (!confirm("Reject?")) return;
 
-  await fetch("/api/admin/withdraw/reject/"+id,{
-    method:"POST",
-    headers:{ Authorization:"Bearer "+token }
-  });
+  try {
+    const res = await fetch("/api/admin/withdraw/reject/"+id,{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+token,
+        "Content-Type":"application/json"
+      }
+    });
 
-  alert("Rejected & refunded");
-  load();
+    const data = await res.json();
+
+    alert(data.message || "Rejected");
+    load();
+
+  } catch (e) {
+    alert("Reject failed");
+  }
 }
 
 load();
