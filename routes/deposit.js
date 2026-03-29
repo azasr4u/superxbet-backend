@@ -128,5 +128,10 @@ if (!paymentValue) {
     res.status(500).json({ error: err.message });
   }
 });
+router.get("/my", verifyToken, async (req, res) => {
+  const deposits = await Deposit.find({ userId: req.user.id })
+    .sort({ createdAt: -1 });
 
+  res.json(deposits);
+});
 export default router;
