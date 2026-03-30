@@ -5,19 +5,19 @@ import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
+// ================= CREATE WITHDRAW =================
 router.post("/", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // ✅ FIXED: accept full data
     const { amount, method, details } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    // ✅ FIXED: validate details (minimal)
-    if (!details || !details.upiId) {
+    // ✅ FIXED: accept both upi & upiId
+    if (!details || (!details.upi && !details.upiId)) {
       return res.status(400).json({ error: "UPI ID required" });
     }
 
@@ -27,23 +27,16 @@ router.post("/", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "User not found" });
     }
 
-    if ((user.wageringRequired || 0) > 0) {
-      return res.status(400).json({
-        error: `Complete wager ₹${user.wageringRequired}`
-      });
-    }
-
     if ((user.walletBalance || 0) < amount) {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    // ✅ deduct balance
+    // deduct balance
     user.walletBalance -= amount;
     await user.save();
 
-    // ✅ FIXED: save method + details
     const withdraw = await Withdraw.create({
-      user: userId,
+      user: userId, // ✅ FIXED FIELD
       amount,
       method,
       details,
@@ -57,14 +50,22 @@ router.post("/", verifyToken, async (req, res) => {
     });
 
   } catch (err) {
-    console.log("WITHDRAW ERROR:", err);
+    console.log("WITHDRAW ERROR FULL:", err.stack);
     res.status(500).json({ error: err.message });
   }
 });
-router.get("/my", verifyToken, async (req, res) => {
-  const deposits = await Deposit.find({ userId: req.user.id })
-    .sort({ createdAt: -1 });
 
-  res.json(deposits);
+// ================= WITHDRAW HISTORY =================
+router.get("/my", verifyToken, async (req, res) => {
+  try {
+    const withdraws = await Withdraw.find({ user: req.user.id })
+      .sort({ createdAt: -1 });
+
+    res.json(withdraws);
+  } catch (err) {
+    console.log("WITHDRAW HISTORY ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
+
 export default router;
