@@ -38,7 +38,7 @@ const betSchema = new mongoose.Schema({
     enum: ["confirmed", "won", "lost", "void"],
     default: "confirmed"
   },
-
+  
   /// 🔥 RESULT SOURCE
   result: {
     type: String,

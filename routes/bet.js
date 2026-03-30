@@ -49,7 +49,11 @@ router.post("/place", verifyToken, async (req, res) => {
         stake: 100,
         odds: odds || 10,
         type: "guess",
+<<<<<<< HEAD
         status: "CONFIRMED" // ✅ FIXED (lowercase)
+=======
+        status: "confirmed" // ✅ FIXED (lowercase)
+>>>>>>> ec96096f390764d48f5b83aeae81584cc80a307a
       });
 
       return res.json({
