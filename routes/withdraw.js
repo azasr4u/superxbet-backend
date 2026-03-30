@@ -16,7 +16,7 @@ router.post("/", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    // ✅ FIXED: accept both upi & upiId
+    // accept both upi / upiId
     if (!details || (!details.upi && !details.upiId)) {
       return res.status(400).json({ error: "UPI ID required" });
     }
@@ -58,7 +58,7 @@ router.post("/", verifyToken, async (req, res) => {
 // ================= WITHDRAW HISTORY =================
 router.get("/my", verifyToken, async (req, res) => {
   try {
-    const withdraws = await Withdraw.find({ user: req.user.id })
+    const withdraws = await Withdraw.find({ user: req.user.id }) // ✅ FIXED
       .sort({ createdAt: -1 });
 
     res.json(withdraws);

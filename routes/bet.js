@@ -5,14 +5,12 @@ import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-/// 🎯 PLACE BET (FINAL)
+/// 🎯 PLACE BET
 router.post("/place", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
     const { match, selection, selections, stake, odds, type } = req.body;
-      
-    console.log("🔥 BET BODY:", req.body); // ✅ DEBUG
 
     if (!type) {
       return res.status(400).json({ error: "Type is required" });
@@ -51,7 +49,7 @@ router.post("/place", verifyToken, async (req, res) => {
         stake: 100,
         odds: odds || 10,
         type: "guess",
-        status: "pending"
+        status: "confirmed" // ✅ FIXED (lowercase)
       });
 
       return res.json({
@@ -78,8 +76,8 @@ router.post("/place", verifyToken, async (req, res) => {
       selections,
       stake,
       odds,
-      type, // ✅ IMPORTANT FIX (NOT HARD CODED)
-      status: "pending"
+      type,
+      status: "confirmed" // ✅ FIXED
     });
 
     res.json({
@@ -110,13 +108,12 @@ router.get("/my", verifyToken, async (req, res) => {
   }
 });
 
-
 /// 🟢 WIN
 router.post("/win/:id", async (req, res) => {
   try {
     const bet = await Bet.findById(req.params.id);
 
-    if (!bet || bet.status !== "pending") {
+    if (!bet || bet.status !== "confirmed") { // ✅ FIXED
       return res.status(400).json({ error: "Invalid bet" });
     }
 
@@ -137,13 +134,12 @@ router.post("/win/:id", async (req, res) => {
   }
 });
 
-
 /// 🔴 LOSE
 router.post("/lose/:id", async (req, res) => {
   try {
     const bet = await Bet.findById(req.params.id);
 
-    if (!bet || bet.status !== "pending") {
+    if (!bet || bet.status !== "confirmed") { // ✅ FIXED
       return res.status(400).json({ error: "Invalid bet" });
     }
 
