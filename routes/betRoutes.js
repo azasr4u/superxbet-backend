@@ -39,7 +39,7 @@ router.post("/place", auth, async (req, res) => {
       odds,
       stake,
       potentialWin: stake * odds,
-      status: "pending",
+      status: "Confirmed",
     });
 
     await bet.save();

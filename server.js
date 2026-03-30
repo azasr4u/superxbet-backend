@@ -17,6 +17,7 @@ import userRoutes from "./routes/user.js";
 import paymentRoutes from "./routes/payment.js";
 import agentRoutes from "./routes/agent.js";
 import matchRoutes from "./routes/match.js";
+import liveRoutes from "./routes/live.js";
 
 
 
@@ -57,6 +58,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/match", matchRoutes);
 app.use("/api/agent", agentRoutes);
+app.use("/ref", require("./routes/ref"));
+app.use("/api", liveRoutes);
 
 // ✅ TEST ROUTE
 app.get("/", (req, res) => {

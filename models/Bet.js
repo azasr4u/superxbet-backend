@@ -35,8 +35,8 @@ const betSchema = new mongoose.Schema({
   /// 🔥 STATUS
   status: {
     type: String,
-    enum: ["pending", "won", "lost", "void"],
-    default: "pending"
+    enum: ["confirmed", "won", "lost", "void"],
+    default: "confirmed"
   },
 
   /// 🔥 RESULT SOURCE
